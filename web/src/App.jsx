@@ -1,499 +1,692 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import './App.css'
 
-const DEFAULT_CONFIG = {
-  method: 'qlora',
-  num_epochs: 3,
-  learning_rate: 0.0002,
-  batch_size: 4,
-  gradient_accumulation_steps: 4,
-  max_seq_length: 2048,
-  lora_r: 32,
-  lora_alpha: 64,
-  use_raft: false,
-  hub_model_id: '',
-  hub_token: '',
+// CSV to JSON converter utility
+function csvToJson(csvText, format = 'sharegpt') {
+  const lines = csvText.trim().split('\n')
+  if (lines.length < 2) return []
+
+  const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/"/g, ''))
+  const results = []
+
+  for (let i = 1; i < lines.length; i++) {
+    const values = parseCSVLine(lines[i])
+    if (values.length < 2) continue
+
+    const row = {}
+    headers.forEach((h, idx) => {
+      row[h] = values[idx] || ''
+    })
+
+    if (format === 'sharegpt') {
+      const question = row.question || row.prompt || row.input || row.q || values[0]
+      const answer = row.answer || row.response || row.output || row.a || values[1]
+      results.push({
+        messages: [
+          { role: 'user', content: question },
+          { role: 'assistant', content: answer }
+        ]
+      })
+    } else if (format === 'raft') {
+      results.push({
+        instruction: row.instruction || row.question || row.prompt || values[0],
+        context: row.context || row.document || row.source || values[1] || '',
+        cot_answer: row.cot_answer || row.answer || row.response || values[2] || values[1]
+      })
+    }
+  }
+  return results
 }
 
-function App() {
-  // Connection state
-  const [apiKey, setApiKey] = useState(localStorage.getItem('runpodApiKey') || '')
-  const [endpointId, setEndpointId] = useState(localStorage.getItem('endpointId') || '')
-  const [connected, setConnected] = useState(false)
+function parseCSVLine(line) {
+  const result = []
+  let current = ''
+  let inQuotes = false
 
-  // Training config
-  const [baseModel, setBaseModel] = useState('Qwen/Qwen2.5-14B-Instruct')
-  const [config, setConfig] = useState(DEFAULT_CONFIG)
-  const [trainingData, setTrainingData] = useState([])
-  const [dataFileName, setDataFileName] = useState('')
-
-  // Jobs
-  const [jobs, setJobs] = useState(() => {
-    const saved = localStorage.getItem('jobs')
-    return saved ? JSON.parse(saved) : []
-  })
-
-  // UI state
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-
-  // Save to localStorage
-  useEffect(() => {
-    if (apiKey) localStorage.setItem('runpodApiKey', apiKey)
-    if (endpointId) localStorage.setItem('endpointId', endpointId)
-  }, [apiKey, endpointId])
-
-  useEffect(() => {
-    localStorage.setItem('jobs', JSON.stringify(jobs))
-  }, [jobs])
-
-  // Poll for job updates
-  useEffect(() => {
-    if (!connected) return
-
-    const activeJobs = jobs.filter(j => j.status === 'IN_QUEUE' || j.status === 'IN_PROGRESS')
-    if (activeJobs.length === 0) return
-
-    const interval = setInterval(async () => {
-      for (const job of activeJobs) {
-        try {
-          const res = await fetch(`https://api.runpod.ai/v2/${endpointId}/status/${job.id}`, {
-            headers: { 'Authorization': `Bearer ${apiKey}` }
-          })
-          if (res.ok) {
-            const data = await res.json()
-            setJobs(prev => prev.map(j =>
-              j.id === job.id ? { ...j, status: data.status, output: data.output } : j
-            ))
-          }
-        } catch (e) {
-          console.error('Failed to poll job:', e)
-        }
-      }
-    }, 5000)
-
-    return () => clearInterval(interval)
-  }, [connected, jobs, apiKey, endpointId])
-
-  const connect = async () => {
-    if (!apiKey || !endpointId) {
-      setError('API Key and Endpoint ID are required')
-      return
-    }
-
-    setLoading(true)
-    setError('')
-
-    try {
-      // Test connection by checking endpoint health
-      const res = await fetch(`https://api.runpod.ai/v2/${endpointId}/health`, {
-        headers: { 'Authorization': `Bearer ${apiKey}` }
-      })
-
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}: Check your API key and endpoint ID`)
-      }
-
-      const health = await res.json()
-      setConnected(true)
-      console.log('Endpoint health:', health)
-    } catch (e) {
-      setError(`Connection failed: ${e.message}`)
-      setConnected(false)
-    } finally {
-      setLoading(false)
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i]
+    if (char === '"') {
+      inQuotes = !inQuotes
+    } else if (char === ',' && !inQuotes) {
+      result.push(current.trim())
+      current = ''
+    } else {
+      current += char
     }
   }
+  result.push(current.trim())
+  return result
+}
 
-  const disconnect = () => {
-    setConnected(false)
-  }
+// Sidebar Component
+function Sidebar({ activeSection, setActiveSection, connected }) {
+  const navItems = [
+    { id: 'data', icon: '📋', label: 'Data Review' },
+    { id: 'training', icon: '🎯', label: 'Training' },
+    { id: 'metrics', icon: '📊', label: 'Metrics' }
+  ]
 
-  const handleFileUpload = async (e) => {
+  return (
+    <aside className="sidebar">
+      <div className="sidebar-header">
+        <img src="/logo.png" alt="MagisAI" className="logo" onError={(e) => { e.target.style.display = 'none' }} />
+        <div className="brand">
+          <span className="brand-name">MagisAI</span>
+          <span className="brand-sub">Training Hub</span>
+        </div>
+      </div>
+
+      <div className="sidebar-divider" />
+
+      <nav className="sidebar-nav">
+        {navItems.map(item => (
+          <button
+            key={item.id}
+            className={`nav-btn ${activeSection === item.id ? 'active' : ''}`}
+            onClick={() => setActiveSection(item.id)}
+          >
+            <span className="nav-icon">{item.icon}</span>
+            <span className="nav-label">{item.label}</span>
+          </button>
+        ))}
+      </nav>
+
+      <div className="sidebar-footer">
+        <div className={`connection-indicator ${connected ? 'connected' : ''}`}>
+          <span className="status-dot" />
+          <span>{connected ? 'Connected' : 'Disconnected'}</span>
+        </div>
+        <span className="version">v1.0.0</span>
+      </div>
+    </aside>
+  )
+}
+
+// Data Review Section
+function DataReviewSection({ trainingData, setTrainingData, dataFormat, setDataFormat }) {
+  const [fileInfo, setFileInfo] = useState(null)
+  const [previewData, setPreviewData] = useState([])
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const fileInputRef = useRef(null)
+
+  const handleFileUpload = (e) => {
     const file = e.target.files[0]
     if (!file) return
 
-    setError('')
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const content = event.target.result
+      let data = []
 
-    try {
-      const text = await file.text()
-      const lines = text.trim().split('\n')
-      const data = lines.map(line => JSON.parse(line))
-      setTrainingData(data)
-      setDataFileName(file.name)
-    } catch (e) {
-      setError(`Failed to parse file: ${e.message}`)
-    }
-  }
-
-  const startTraining = async () => {
-    if (!trainingData.length) {
-      setError('Please upload training data first')
-      return
-    }
-
-    setLoading(true)
-    setError('')
-
-    try {
-      const payload = {
-        input: {
-          base_model: baseModel,
-          training_data: trainingData,
-          config: {
-            method: config.method,
-            num_epochs: config.num_epochs,
-            learning_rate: config.learning_rate,
-            batch_size: config.batch_size,
-            gradient_accumulation_steps: config.gradient_accumulation_steps,
-            max_seq_length: config.max_seq_length,
-            lora_r: config.lora_r,
-            lora_alpha: config.lora_alpha,
-            use_raft: config.use_raft,
-            hub_model_id: config.hub_model_id || null,
-            hub_token: config.hub_token || null,
+      if (file.name.endsWith('.csv')) {
+        data = csvToJson(content, dataFormat)
+        setFileInfo({ name: file.name, type: 'CSV', converted: true })
+      } else if (file.name.endsWith('.json') || file.name.endsWith('.jsonl')) {
+        try {
+          if (file.name.endsWith('.jsonl')) {
+            data = content.trim().split('\n').map(line => JSON.parse(line))
+          } else {
+            const parsed = JSON.parse(content)
+            data = Array.isArray(parsed) ? parsed : [parsed]
           }
+          setFileInfo({ name: file.name, type: 'JSON', converted: false })
+        } catch (err) {
+          alert('Invalid JSON file: ' + err.message)
+          return
         }
       }
 
-      const res = await fetch(`https://api.runpod.ai/v2/${endpointId}/run`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
+      setTrainingData(data)
+      setPreviewData(data)
+      setCurrentIndex(0)
+    }
+    reader.readAsText(file)
+  }
+
+  const currentItem = previewData[currentIndex]
+
+  const exportAsJsonl = () => {
+    if (!trainingData.length) return
+    const jsonl = trainingData.map(item => JSON.stringify(item)).join('\n')
+    const blob = new Blob([jsonl], { type: 'application/jsonl' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'training_data.jsonl'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  return (
+    <div className="section-content">
+      <div className="section-header">
+        <h2>Data Review</h2>
+        <div className="header-actions">
+          <select
+            className="format-select"
+            value={dataFormat}
+            onChange={(e) => setDataFormat(e.target.value)}
+          >
+            <option value="sharegpt">ShareGPT Format</option>
+            <option value="raft">RAFT Format</option>
+          </select>
+          <button className="btn btn-secondary" onClick={() => fileInputRef.current?.click()}>
+            Load Data
+          </button>
+          <button className="btn btn-primary" onClick={exportAsJsonl} disabled={!trainingData.length}>
+            Export JSONL
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv,.json,.jsonl"
+            onChange={handleFileUpload}
+            style={{ display: 'none' }}
+          />
+        </div>
+      </div>
+
+      {fileInfo && (
+        <div className="file-info-bar">
+          <span className="file-name">{fileInfo.name}</span>
+          {fileInfo.converted && <span className="converted-badge">Converted from CSV</span>}
+          <span className="sample-count">{trainingData.length} samples</span>
+        </div>
+      )}
+
+      <div className="progress-section">
+        <div className="progress-bar-container">
+          <div
+            className="progress-fill"
+            style={{ width: previewData.length ? `${((currentIndex + 1) / previewData.length) * 100}%` : '0%' }}
+          />
+        </div>
+        <span className="progress-text">
+          {previewData.length ? `${currentIndex + 1} / ${previewData.length}` : 'No data loaded'}
+        </span>
+      </div>
+
+      <div className="glass-card preview-card">
+        {currentItem ? (
+          dataFormat === 'sharegpt' ? (
+            <>
+              <div className="preview-field">
+                <label>Question</label>
+                <div className="field-content">{currentItem.messages?.[0]?.content || '-'}</div>
+              </div>
+              <div className="preview-field">
+                <label>Answer</label>
+                <div className="field-content answer">{currentItem.messages?.[1]?.content || '-'}</div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="preview-field">
+                <label>Instruction</label>
+                <div className="field-content">{currentItem.instruction || '-'}</div>
+              </div>
+              <div className="preview-field">
+                <label>Context</label>
+                <div className="field-content context">{currentItem.context || '-'}</div>
+              </div>
+              <div className="preview-field">
+                <label>Answer</label>
+                <div className="field-content answer">{currentItem.cot_answer || '-'}</div>
+              </div>
+            </>
+          )
+        ) : (
+          <div className="no-data-message">
+            <div className="no-data-icon">📁</div>
+            <p>No data loaded</p>
+            <p className="hint">Upload a CSV or JSON file to get started</p>
+          </div>
+        )}
+      </div>
+
+      {previewData.length > 0 && (
+        <div className="action-buttons">
+          <button className="btn btn-accept">Accept (A)</button>
+          <button className="btn btn-edit">Edit (E)</button>
+          <button className="btn btn-reject">Reject (R)</button>
+        </div>
+      )}
+
+      <div className="navigation-controls">
+        <button
+          className="btn btn-nav"
+          onClick={() => setCurrentIndex(i => Math.max(0, i - 1))}
+          disabled={currentIndex === 0}
+        >
+          ← Previous
+        </button>
+        <span className="nav-counter">{previewData.length ? `${currentIndex + 1} of ${previewData.length}` : '-'}</span>
+        <button
+          className="btn btn-nav"
+          onClick={() => setCurrentIndex(i => Math.min(previewData.length - 1, i + 1))}
+          disabled={currentIndex >= previewData.length - 1}
+        >
+          Next →
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// Training Section
+function TrainingSection({ config, setConfig, trainingData, connected, onConnect, onStartTraining, consoleOutput }) {
+  const [apiKey, setApiKey] = useState(localStorage.getItem('runpod_api_key') || '')
+  const [endpointId, setEndpointId] = useState(localStorage.getItem('runpod_endpoint_id') || '')
+  const consoleRef = useRef(null)
+
+  useEffect(() => {
+    if (consoleRef.current) {
+      consoleRef.current.scrollTop = consoleRef.current.scrollHeight
+    }
+  }, [consoleOutput])
+
+  const handleConnect = () => {
+    localStorage.setItem('runpod_api_key', apiKey)
+    localStorage.setItem('runpod_endpoint_id', endpointId)
+    onConnect(apiKey, endpointId)
+  }
+
+  return (
+    <div className="section-content">
+      <div className="section-header">
+        <h2>Training Configuration</h2>
+      </div>
+
+      <div className="config-panels">
+        {/* Connection Panel */}
+        <div className="glass-card config-panel">
+          <h3>RunPod Connection</h3>
+          <div className="config-form">
+            <div className="form-field">
+              <label>API Key</label>
+              <input
+                type="password"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                placeholder="Enter RunPod API Key"
+              />
+            </div>
+            <div className="form-field">
+              <label>Endpoint ID</label>
+              <input
+                type="text"
+                value={endpointId}
+                onChange={(e) => setEndpointId(e.target.value)}
+                placeholder="Enter Endpoint ID"
+              />
+            </div>
+            <button className="btn btn-primary" onClick={handleConnect}>
+              {connected ? 'Reconnect' : 'Connect'}
+            </button>
+          </div>
+        </div>
+
+        {/* Training Type */}
+        <div className="glass-card config-panel">
+          <h3>Training Type</h3>
+          <div className="training-types">
+            {['qlora', 'lora', 'full'].map(type => (
+              <button
+                key={type}
+                className={`type-btn ${config.method === type ? 'active' : ''}`}
+                onClick={() => setConfig({ ...config, method: type })}
+              >
+                {type.toUpperCase()}
+              </button>
+            ))}
+          </div>
+          <p className="type-description">
+            {config.method === 'qlora' && 'QLoRA: 4-bit quantized LoRA - most memory efficient'}
+            {config.method === 'lora' && 'LoRA: Low-rank adaptation - good balance of speed and quality'}
+            {config.method === 'full' && 'Full fine-tuning - best quality but requires more VRAM'}
+          </p>
+        </div>
+
+        {/* Hyperparameters */}
+        <div className="glass-card config-panel wide">
+          <h3>Hyperparameters</h3>
+          <div className="params-grid">
+            <div className="form-field">
+              <label>Base Model</label>
+              <select
+                value={config.base_model}
+                onChange={(e) => setConfig({ ...config, base_model: e.target.value })}
+              >
+                <option value="Qwen/Qwen2.5-14B-Instruct">Qwen 2.5 14B Instruct</option>
+                <option value="Qwen/Qwen2.5-7B-Instruct">Qwen 2.5 7B Instruct</option>
+                <option value="meta-llama/Llama-3.1-8B-Instruct">Llama 3.1 8B Instruct</option>
+                <option value="mistralai/Mistral-7B-Instruct-v0.3">Mistral 7B Instruct</option>
+              </select>
+            </div>
+            <div className="form-field">
+              <label>Learning Rate</label>
+              <input
+                type="text"
+                value={config.learning_rate}
+                onChange={(e) => setConfig({ ...config, learning_rate: e.target.value })}
+              />
+            </div>
+            <div className="form-field">
+              <label>Epochs</label>
+              <input
+                type="number"
+                value={config.num_epochs}
+                onChange={(e) => setConfig({ ...config, num_epochs: parseInt(e.target.value) || 1 })}
+              />
+            </div>
+            <div className="form-field">
+              <label>Batch Size</label>
+              <input
+                type="number"
+                value={config.batch_size}
+                onChange={(e) => setConfig({ ...config, batch_size: parseInt(e.target.value) || 1 })}
+              />
+            </div>
+            <div className="form-field">
+              <label>LoRA Rank</label>
+              <input
+                type="number"
+                value={config.lora_r}
+                onChange={(e) => setConfig({ ...config, lora_r: parseInt(e.target.value) || 8 })}
+              />
+            </div>
+            <div className="form-field">
+              <label>LoRA Alpha</label>
+              <input
+                type="number"
+                value={config.lora_alpha}
+                onChange={(e) => setConfig({ ...config, lora_alpha: parseInt(e.target.value) || 16 })}
+              />
+            </div>
+            <div className="form-field">
+              <label>Max Seq Length</label>
+              <input
+                type="number"
+                value={config.max_seq_length}
+                onChange={(e) => setConfig({ ...config, max_seq_length: parseInt(e.target.value) || 2048 })}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Training Actions */}
+      <div className="training-actions">
+        <div className="data-status">
+          <span className={trainingData.length > 0 ? 'ready' : ''}>
+            {trainingData.length > 0
+              ? `Training Data: ${trainingData.length} samples ready`
+              : 'No training data loaded'}
+          </span>
+        </div>
+        <button
+          className="btn btn-start"
+          onClick={onStartTraining}
+          disabled={!connected || !trainingData.length}
+        >
+          Start Training
+        </button>
+      </div>
+
+      {/* Console Output */}
+      <div className="glass-card console-panel">
+        <h3>Console Output</h3>
+        <div className="console" ref={consoleRef}>
+          {consoleOutput.map((line, i) => (
+            <div key={i} className="console-line">{line}</div>
+          ))}
+          {consoleOutput.length === 0 && (
+            <div className="console-line muted">Waiting for activity...</div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Metrics Section
+function MetricsSection({ jobHistory }) {
+  return (
+    <div className="section-content">
+      <div className="section-header">
+        <h2>Training Metrics</h2>
+      </div>
+
+      <div className="stats-row">
+        <div className="glass-card stat-card">
+          <span className="stat-value">{jobHistory.length}</span>
+          <span className="stat-label">Total Jobs</span>
+        </div>
+        <div className="glass-card stat-card">
+          <span className="stat-value success">{jobHistory.filter(j => j.status === 'COMPLETED').length}</span>
+          <span className="stat-label">Completed</span>
+        </div>
+        <div className="glass-card stat-card">
+          <span className="stat-value warning">{jobHistory.filter(j => j.status === 'IN_PROGRESS' || j.status === 'IN_QUEUE').length}</span>
+          <span className="stat-label">In Progress</span>
+        </div>
+        <div className="glass-card stat-card">
+          <span className="stat-value error">{jobHistory.filter(j => j.status === 'FAILED').length}</span>
+          <span className="stat-label">Failed</span>
+        </div>
+      </div>
+
+      <div className="glass-card jobs-panel">
+        <h3>Job History</h3>
+        {jobHistory.length > 0 ? (
+          <div className="job-list">
+            {jobHistory.map((job, i) => (
+              <div key={i} className={`job-card ${job.status.toLowerCase().replace('_', '-')}`}>
+                <div className="job-header">
+                  <span className="job-id">{job.id?.slice(0, 12) || 'Unknown'}</span>
+                  <span className={`job-status ${job.status.toLowerCase()}`}>{job.status}</span>
+                </div>
+                <div className="job-details">
+                  <span>Model: {job.model}</span>
+                  <span>Samples: {job.samples}</span>
+                  <span>Started: {job.startTime}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="no-data-message">
+            <div className="no-data-icon">📊</div>
+            <p>No training jobs yet</p>
+            <p className="hint">Start a training job to see metrics here</p>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// Main App
+function App() {
+  const [activeSection, setActiveSection] = useState('data')
+  const [connected, setConnected] = useState(false)
+  const [trainingData, setTrainingData] = useState([])
+  const [dataFormat, setDataFormat] = useState('sharegpt')
+  const [consoleOutput, setConsoleOutput] = useState([])
+  const [jobHistory, setJobHistory] = useState(() => {
+    const saved = localStorage.getItem('job_history')
+    return saved ? JSON.parse(saved) : []
+  })
+
+  const [config, setConfig] = useState({
+    base_model: 'Qwen/Qwen2.5-14B-Instruct',
+    method: 'qlora',
+    learning_rate: '2e-4',
+    num_epochs: 3,
+    batch_size: 4,
+    gradient_accumulation_steps: 4,
+    max_seq_length: 2048,
+    lora_r: 32,
+    lora_alpha: 64
+  })
+
+  const apiKeyRef = useRef('')
+  const endpointIdRef = useRef('')
+
+  const log = (message) => {
+    setConsoleOutput(prev => [...prev, `[${new Date().toLocaleTimeString()}] ${message}`])
+  }
+
+  const handleConnect = async (apiKey, endpointId) => {
+    apiKeyRef.current = apiKey
+    endpointIdRef.current = endpointId
+    log('Connecting to RunPod...')
+
+    try {
+      const response = await fetch(`https://api.runpod.ai/v2/${endpointId}/health`, {
+        headers: { 'Authorization': `Bearer ${apiKey}` }
       })
 
-      if (!res.ok) {
-        const err = await res.json()
-        throw new Error(err.error || 'Failed to submit job')
+      if (response.ok) {
+        setConnected(true)
+        log('Connected to RunPod successfully!')
+      } else {
+        log(`Connection failed: ${response.status}`)
+        setConnected(false)
       }
-
-      const data = await res.json()
-      const newJob = {
-        id: data.id,
-        status: data.status || 'IN_QUEUE',
-        createdAt: new Date().toISOString(),
-        baseModel,
-        method: config.method,
-        samples: trainingData.length,
-        output: null
-      }
-
-      setJobs(prev => [newJob, ...prev])
-    } catch (e) {
-      setError(`Failed to start training: ${e.message}`)
-    } finally {
-      setLoading(false)
+    } catch (err) {
+      log(`Connection error: ${err.message}`)
+      setConnected(false)
     }
   }
 
-  const updateConfig = (key, value) => {
-    setConfig(prev => ({ ...prev, [key]: value }))
-  }
+  const handleStartTraining = async () => {
+    if (!connected || !trainingData.length) return
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'COMPLETED': return 'status-completed'
-      case 'FAILED': return 'status-failed'
-      case 'IN_PROGRESS': return 'status-running'
-      default: return 'status-pending'
+    log('Starting training job...')
+    log(`Model: ${config.base_model}`)
+    log(`Method: ${config.method}`)
+    log(`Samples: ${trainingData.length}`)
+
+    const jobId = `job_${Date.now()}`
+    const newJob = {
+      id: jobId,
+      status: 'IN_QUEUE',
+      model: config.base_model,
+      samples: trainingData.length,
+      startTime: new Date().toLocaleString()
+    }
+
+    setJobHistory(prev => {
+      const updated = [newJob, ...prev]
+      localStorage.setItem('job_history', JSON.stringify(updated))
+      return updated
+    })
+
+    try {
+      const response = await fetch(`https://api.runpod.ai/v2/${endpointIdRef.current}/run`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKeyRef.current}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          input: {
+            base_model: config.base_model,
+            training_data: trainingData,
+            config: {
+              method: config.method,
+              num_epochs: config.num_epochs,
+              learning_rate: parseFloat(config.learning_rate),
+              batch_size: config.batch_size,
+              gradient_accumulation_steps: config.gradient_accumulation_steps,
+              max_seq_length: config.max_seq_length,
+              lora_r: config.lora_r,
+              lora_alpha: config.lora_alpha,
+              use_raft: dataFormat === 'raft'
+            }
+          }
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.id) {
+        log(`Job submitted: ${data.id}`)
+        setJobHistory(prev => {
+          const updated = prev.map(j => j.id === jobId ? { ...j, id: data.id } : j)
+          localStorage.setItem('job_history', JSON.stringify(updated))
+          return updated
+        })
+        pollJobStatus(data.id)
+      } else {
+        log(`Error: ${data.error || 'Unknown error'}`)
+      }
+    } catch (err) {
+      log(`Error: ${err.message}`)
     }
   }
 
-  const clearJobs = () => {
-    setJobs([])
-    localStorage.removeItem('jobs')
+  const pollJobStatus = async (jobId) => {
+    const poll = async () => {
+      try {
+        const response = await fetch(`https://api.runpod.ai/v2/${endpointIdRef.current}/status/${jobId}`, {
+          headers: { 'Authorization': `Bearer ${apiKeyRef.current}` }
+        })
+        const data = await response.json()
+        log(`Status: ${data.status}`)
+
+        setJobHistory(prev => {
+          const updated = prev.map(j => j.id === jobId ? { ...j, status: data.status } : j)
+          localStorage.setItem('job_history', JSON.stringify(updated))
+          return updated
+        })
+
+        if (data.status === 'IN_QUEUE' || data.status === 'IN_PROGRESS') {
+          setTimeout(poll, 5000)
+        } else if (data.status === 'COMPLETED') {
+          log('Training completed!')
+          if (data.output) log(`Output: ${JSON.stringify(data.output, null, 2)}`)
+        } else if (data.status === 'FAILED') {
+          log(`Training failed: ${data.error || 'Unknown error'}`)
+        }
+      } catch (err) {
+        log(`Polling error: ${err.message}`)
+      }
+    }
+    setTimeout(poll, 3000)
   }
 
   return (
     <div className="app">
-      <header className="header">
-        <h1>MagisAI Training Hub</h1>
-        <div className="connection-status">
-          <span className={`status-dot ${connected ? 'connected' : ''}`}></span>
-          {connected ? 'Connected' : 'Disconnected'}
-        </div>
-      </header>
+      <Sidebar
+        activeSection={activeSection}
+        setActiveSection={setActiveSection}
+        connected={connected}
+      />
 
-      <main className="main">
-        {/* Connection Panel */}
-        <section className="panel connection-panel">
-          <h2>RunPod Connection</h2>
-          <div className="connection-form">
-            <div className="form-row">
-              <input
-                type="password"
-                placeholder="RunPod API Key"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                disabled={connected}
-              />
-              <input
-                type="text"
-                placeholder="Endpoint ID"
-                value={endpointId}
-                onChange={(e) => setEndpointId(e.target.value)}
-                disabled={connected}
-              />
-            </div>
-            {connected ? (
-              <button onClick={disconnect} className="btn btn-secondary">
-                Disconnect
-              </button>
-            ) : (
-              <button onClick={connect} disabled={loading || !apiKey || !endpointId} className="btn btn-primary">
-                {loading ? 'Connecting...' : 'Connect'}
-              </button>
-            )}
-          </div>
-          <p className="hint">Get your API key from <a href="https://www.runpod.io/console/user/settings" target="_blank" rel="noopener noreferrer">RunPod Settings</a></p>
-        </section>
-
-        {error && <div className="error-banner">{error}</div>}
-
-        {connected && (
-          <>
-            {/* Configuration Panel */}
-            <section className="panel config-panel">
-              <h2>Training Configuration</h2>
-
-              <div className="config-grid">
-                <div className="form-group">
-                  <label>Base Model</label>
-                  <input
-                    type="text"
-                    value={baseModel}
-                    onChange={(e) => setBaseModel(e.target.value)}
-                    placeholder="Qwen/Qwen2.5-14B-Instruct"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Training Method</label>
-                  <select value={config.method} onChange={(e) => updateConfig('method', e.target.value)}>
-                    <option value="qlora">QLoRA (4-bit, memory efficient)</option>
-                    <option value="lora">LoRA (standard)</option>
-                    <option value="full">Full Fine-tuning</option>
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label>Epochs</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="100"
-                    value={config.num_epochs}
-                    onChange={(e) => updateConfig('num_epochs', parseInt(e.target.value))}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Learning Rate</label>
-                  <input
-                    type="number"
-                    step="0.0001"
-                    value={config.learning_rate}
-                    onChange={(e) => updateConfig('learning_rate', parseFloat(e.target.value))}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Batch Size</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="32"
-                    value={config.batch_size}
-                    onChange={(e) => updateConfig('batch_size', parseInt(e.target.value))}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Gradient Accumulation</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="32"
-                    value={config.gradient_accumulation_steps}
-                    onChange={(e) => updateConfig('gradient_accumulation_steps', parseInt(e.target.value))}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Max Sequence Length</label>
-                  <input
-                    type="number"
-                    min="256"
-                    max="8192"
-                    step="256"
-                    value={config.max_seq_length}
-                    onChange={(e) => updateConfig('max_seq_length', parseInt(e.target.value))}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>LoRA Rank (r)</label>
-                  <input
-                    type="number"
-                    min="4"
-                    max="256"
-                    value={config.lora_r}
-                    onChange={(e) => updateConfig('lora_r', parseInt(e.target.value))}
-                    disabled={config.method === 'full'}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>LoRA Alpha</label>
-                  <input
-                    type="number"
-                    min="4"
-                    max="512"
-                    value={config.lora_alpha}
-                    onChange={(e) => updateConfig('lora_alpha', parseInt(e.target.value))}
-                    disabled={config.method === 'full'}
-                  />
-                </div>
-
-                <div className="form-group checkbox-group">
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={config.use_raft}
-                      onChange={(e) => updateConfig('use_raft', e.target.checked)}
-                    />
-                    Enable RAFT Format
-                  </label>
-                </div>
-              </div>
-
-              <div className="hub-config">
-                <h3>Hugging Face Hub (Optional)</h3>
-                <div className="config-grid">
-                  <div className="form-group">
-                    <label>Hub Model ID</label>
-                    <input
-                      type="text"
-                      placeholder="username/model-name"
-                      value={config.hub_model_id}
-                      onChange={(e) => updateConfig('hub_model_id', e.target.value)}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Hub Token</label>
-                    <input
-                      type="password"
-                      placeholder="hf_..."
-                      value={config.hub_token}
-                      onChange={(e) => updateConfig('hub_token', e.target.value)}
-                    />
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            {/* Data Panel */}
-            <section className="panel data-panel">
-              <h2>Training Data</h2>
-
-              <div className="upload-area">
-                <input
-                  type="file"
-                  accept=".jsonl,.json"
-                  onChange={handleFileUpload}
-                  id="file-upload"
-                />
-                <label htmlFor="file-upload" className="upload-label">
-                  {dataFileName ? (
-                    <>
-                      <span className="file-icon">📄</span>
-                      <span>{dataFileName}</span>
-                      <span className="sample-count">{trainingData.length} samples</span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="upload-icon">📁</span>
-                      <span>Click to upload JSONL file</span>
-                    </>
-                  )}
-                </label>
-              </div>
-
-              {trainingData.length > 0 && (
-                <div className="data-preview">
-                  <h4>Preview (first sample):</h4>
-                  <pre>{JSON.stringify(trainingData[0], null, 2)}</pre>
-                </div>
-              )}
-
-              <button
-                onClick={startTraining}
-                disabled={loading || !trainingData.length}
-                className="btn btn-primary btn-large"
-              >
-                {loading ? 'Submitting...' : 'Start Training'}
-              </button>
-            </section>
-
-            {/* Jobs Panel */}
-            <section className="panel jobs-panel">
-              <div className="jobs-header">
-                <h2>Training Jobs</h2>
-                {jobs.length > 0 && (
-                  <button onClick={clearJobs} className="btn btn-secondary btn-small">
-                    Clear History
-                  </button>
-                )}
-              </div>
-
-              {jobs.length === 0 ? (
-                <p className="no-jobs">No training jobs yet</p>
-              ) : (
-                <div className="jobs-list">
-                  {jobs.map(job => (
-                    <div key={job.id} className={`job-card ${job.status.toLowerCase().replace('_', '-')}`}>
-                      <div className="job-header">
-                        <span className="job-id">Job {job.id.slice(0, 8)}</span>
-                        <span className={`job-status ${getStatusColor(job.status)}`}>
-                          {job.status}
-                        </span>
-                      </div>
-                      <div className="job-details">
-                        <span>{job.baseModel}</span>
-                        <span>{job.method.toUpperCase()}</span>
-                        <span>{job.samples} samples</span>
-                      </div>
-                      {job.output && job.status === 'COMPLETED' && (
-                        <div className="job-result">
-                          <span>Trained: {job.output.samples_trained} samples</span>
-                          {job.output.hub_model_id && (
-                            <a
-                              href={`https://huggingface.co/${job.output.hub_model_id}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              View on Hub
-                            </a>
-                          )}
-                        </div>
-                      )}
-                      {job.output && job.status === 'FAILED' && (
-                        <div className="job-error">
-                          {job.output.error || 'Training failed'}
-                        </div>
-                      )}
-                      <div className="job-time">
-                        {new Date(job.createdAt).toLocaleString()}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </section>
-          </>
+      <main className="main-content">
+        {activeSection === 'data' && (
+          <DataReviewSection
+            trainingData={trainingData}
+            setTrainingData={setTrainingData}
+            dataFormat={dataFormat}
+            setDataFormat={setDataFormat}
+          />
+        )}
+        {activeSection === 'training' && (
+          <TrainingSection
+            config={config}
+            setConfig={setConfig}
+            trainingData={trainingData}
+            connected={connected}
+            onConnect={handleConnect}
+            onStartTraining={handleStartTraining}
+            consoleOutput={consoleOutput}
+          />
+        )}
+        {activeSection === 'metrics' && (
+          <MetricsSection jobHistory={jobHistory} />
         )}
       </main>
     </div>
