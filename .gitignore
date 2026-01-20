@@ -1,0 +1,7 @@
+.env
+node_modules/
+web/node_modules/
+web/dist/
+*.log
+__pycache__/
+.DS_Store
