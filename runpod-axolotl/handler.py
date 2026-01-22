@@ -1,10 +1,34 @@
 """
-MagisAI Axolotl Training Handler - RunPod Serverless
+MagisAI Axolotl Training Handler for RunPod Serverless
 
-Build: docker build -t matvg621/magisai-training:v1 .
-Push:  docker push matvg621/magisai-training:v1
+Uses Axolotl for flexible fine-tuning with support for:
+- LoRA / QLoRA
+- RAFT (Retrieval-Augmented Fine-Tuning)
+- Full fine-tuning
+- DeepSpeed
 
-Deploy as a Serverless Endpoint on RunPod.
+Expected input format:
+{
+    "input": {
+        "base_model": "Qwen/Qwen2.5-14B-Instruct",
+        "training_data": [
+            {"messages": [{"role": "user", "content": "..."}, {"role": "assistant", "content": "..."}]}
+        ],
+        "config": {
+            "method": "qlora",           # lora, qlora, full
+            "num_epochs": 3,
+            "learning_rate": 2e-4,
+            "batch_size": 4,
+            "gradient_accumulation_steps": 4,
+            "max_seq_length": 2048,
+            "lora_r": 32,
+            "lora_alpha": 64,
+            "use_raft": false,           # Enable RAFT format
+            "hub_model_id": null,        # Push to HF Hub (optional)
+            "hub_token": null            # HF token for push
+        }
+    }
+}
 """
 
 import runpod
@@ -16,25 +40,35 @@ from datetime import datetime
 from pathlib import Path
 
 
-def generate_axolotl_config(base_model: str, data_path: str, output_dir: str, config: dict) -> dict:
+def generate_axolotl_config(
+    base_model: str,
+    data_path: str,
+    output_dir: str,
+    config: dict
+) -> dict:
     """Generate Axolotl YAML configuration."""
 
     method = config.get("method", "qlora")
     use_raft = config.get("use_raft", False)
 
+    # Base configuration
     axolotl_config = {
         "base_model": base_model,
         "model_type": "AutoModelForCausalLM",
         "tokenizer_type": "AutoTokenizer",
         "trust_remote_code": True,
 
+        # Dataset configuration
         "datasets": [{
             "path": data_path,
-            "type": "sharegpt",  # Always use sharegpt - RAFT context is embedded in user message
+            "type": "sharegpt" if not use_raft else "raft",
             "conversation": "chatml",
         }],
 
+        # Output
         "output_dir": output_dir,
+
+        # Training parameters
         "sequence_len": config.get("max_seq_length", 2048),
         "sample_packing": True,
         "pad_to_sequence_len": True,
@@ -47,21 +81,26 @@ def generate_axolotl_config(base_model: str, data_path: str, output_dir: str, co
         "lr_scheduler": "cosine",
         "warmup_ratio": 0.05,
 
+        # Memory optimization
         "gradient_checkpointing": True,
         "flash_attention": True,
 
+        # Logging
         "logging_steps": 10,
         "save_strategy": "steps",
         "save_steps": 100,
         "save_total_limit": 2,
 
+        # Precision
         "bf16": True,
         "tf32": True,
+
+        # Misc
         "seed": 42,
         "strict": False,
     }
 
-    # Method-specific config
+    # Method-specific configuration
     if method == "qlora":
         axolotl_config.update({
             "adapter": "qlora",
@@ -69,7 +108,10 @@ def generate_axolotl_config(base_model: str, data_path: str, output_dir: str, co
             "lora_r": config.get("lora_r", 32),
             "lora_alpha": config.get("lora_alpha", 64),
             "lora_dropout": 0.05,
-            "lora_target_modules": ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
+            "lora_target_modules": [
+                "q_proj", "k_proj", "v_proj", "o_proj",
+                "gate_proj", "up_proj", "down_proj"
+            ],
             "lora_target_linear": True,
         })
     elif method == "lora":
@@ -81,10 +123,11 @@ def generate_axolotl_config(base_model: str, data_path: str, output_dir: str, co
             "lora_target_linear": True,
         })
     elif method == "full":
+        # Full fine-tuning - no adapter
         axolotl_config["load_in_8bit"] = False
         axolotl_config["load_in_4bit"] = False
 
-    # Hub push
+    # Hub push configuration
     if config.get("hub_model_id"):
         axolotl_config["hub_model_id"] = config["hub_model_id"]
         axolotl_config["push_to_hub"] = True
@@ -95,39 +138,35 @@ def generate_axolotl_config(base_model: str, data_path: str, output_dir: str, co
 
 
 def prepare_training_data(training_data: list, output_path: str, use_raft: bool = False) -> str:
-    """Convert training data to Axolotl-compatible JSONL format (ShareGPT).
-
-    Both SFT and RAFT data use ShareGPT format. For RAFT, the context/documents
-    are embedded in the user message by the frontend.
-    """
+    """Convert training data to Axolotl-compatible JSONL format."""
 
     with open(output_path, "w") as f:
         for item in training_data:
-            # Always use ShareGPT format - works for both SFT and RAFT
-            if "messages" in item:
-                # Convert OpenAI/ChatML format to ShareGPT
-                convos = []
-                for msg in item["messages"]:
-                    role = "human" if msg["role"] == "user" else "gpt"
-                    convos.append({"from": role, "value": msg["content"]})
-                f.write(json.dumps({"conversations": convos}) + "\n")
-            elif "conversations" in item:
-                # Already in ShareGPT format
-                f.write(json.dumps(item) + "\n")
-            elif "instruction" in item:
-                # Legacy RAFT format - convert to ShareGPT
-                user_content = item.get("instruction", "")
-                if item.get("context"):
-                    user_content = f"{item['context']}\n\n{user_content}"
-                assistant_content = item.get("cot_answer", item.get("answer", ""))
-                convos = [
-                    {"from": "human", "value": user_content},
-                    {"from": "gpt", "value": assistant_content}
-                ]
-                f.write(json.dumps({"conversations": convos}) + "\n")
+            if use_raft:
+                # RAFT format expects: instruction, context, cot_answer
+                # Map from our format if needed
+                raft_item = {
+                    "instruction": item.get("instruction", item.get("question", "")),
+                    "context": item.get("context", item.get("documents", "")),
+                    "cot_answer": item.get("cot_answer", item.get("answer", "")),
+                }
+                f.write(json.dumps(raft_item) + "\n")
             else:
-                # Fallback - write as-is
-                f.write(json.dumps(item) + "\n")
+                # ShareGPT/messages format
+                if "messages" in item:
+                    f.write(json.dumps({"conversations": item["messages"]}) + "\n")
+                elif "conversations" in item:
+                    f.write(json.dumps(item) + "\n")
+                elif "text" in item:
+                    # Convert text format to conversations
+                    f.write(json.dumps({
+                        "conversations": [
+                            {"from": "human", "value": ""},
+                            {"from": "gpt", "value": item["text"]}
+                        ]
+                    }) + "\n")
+                else:
+                    f.write(json.dumps(item) + "\n")
 
     return output_path
 
@@ -155,24 +194,30 @@ def run_axolotl_training(config_path: str, job) -> dict:
     )
 
     output_lines = []
+    last_progress = ""
+
     for line in process.stdout:
         line = line.strip()
         if line:
             print(line)
             output_lines.append(line)
+
+            # Parse progress from Axolotl output
             if "loss" in line.lower() and "step" in line.lower():
+                last_progress = line
                 runpod.serverless.progress_update(job, f"Training: {line[:100]}")
 
     process.wait()
 
     return {
         "return_code": process.returncode,
-        "output": "\n".join(output_lines[-50:]),
+        "output": "\n".join(output_lines[-50:]),  # Last 50 lines
+        "last_progress": last_progress
     }
 
 
 def handler(job):
-    """Main serverless handler for training jobs."""
+    """Main handler for Axolotl training jobs."""
 
     job_input = job["input"]
 
@@ -181,17 +226,18 @@ def handler(job):
     training_data = job_input.get("training_data", [])
     config = job_input.get("config", {})
 
+    # Validate
     if not training_data:
         return {"status": "error", "error": "No training data provided"}
 
-    print(f"Training job received:")
+    print(f"Received Axolotl training job:")
     print(f"  Base model: {base_model}")
-    print(f"  Samples: {len(training_data)}")
+    print(f"  Training samples: {len(training_data)}")
     print(f"  Method: {config.get('method', 'qlora')}")
-    print(f"  RAFT: {config.get('use_raft', False)}")
+    print(f"  RAFT mode: {config.get('use_raft', False)}")
 
     try:
-        # Create working directory
+        # Create working directories
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         work_dir = Path("/workspace") if Path("/workspace").exists() else Path("/tmp")
         job_dir = work_dir / f"axolotl_{timestamp}"
@@ -203,12 +249,16 @@ def handler(job):
         data_path = job_dir / "train.jsonl"
         config_path = job_dir / "config.yaml"
 
-        # Prepare data
-        runpod.serverless.progress_update(job, "Preparing training data...")
-        prepare_training_data(training_data, str(data_path), config.get("use_raft", False))
+        print(f"Working directory: {job_dir}")
 
-        # Generate config
-        runpod.serverless.progress_update(job, "Generating config...")
+        # Prepare training data
+        runpod.serverless.progress_update(job, "Preparing training data...")
+        use_raft = config.get("use_raft", False)
+        prepare_training_data(training_data, str(data_path), use_raft)
+        print(f"Training data written to: {data_path}")
+
+        # Generate Axolotl config
+        runpod.serverless.progress_update(job, "Generating Axolotl config...")
         axolotl_config = generate_axolotl_config(
             base_model=base_model,
             data_path=str(data_path),
@@ -218,6 +268,7 @@ def handler(job):
 
         with open(config_path, "w") as f:
             yaml.dump(axolotl_config, f, default_flow_style=False)
+        print(f"Config written to: {config_path}")
 
         # Run training
         result = run_axolotl_training(str(config_path), job)
@@ -231,9 +282,12 @@ def handler(job):
 
         runpod.serverless.progress_update(job, "Training complete!")
 
-        # Check outputs
+        # Check for output files
         adapter_path = output_dir / "adapter_model.safetensors"
         model_path = output_dir / "model.safetensors"
+
+        has_adapter = adapter_path.exists()
+        has_model = model_path.exists()
 
         return {
             "status": "success",
@@ -242,14 +296,17 @@ def handler(job):
             "base_model": base_model,
             "method": config.get("method", "qlora"),
             "samples_trained": len(training_data),
-            "has_adapter": adapter_path.exists(),
-            "has_model": model_path.exists(),
-            "hub_model_id": config.get("hub_model_id"),
+            "has_adapter": has_adapter,
+            "has_model": has_model,
             "training_output": result["output"],
+            "hub_model_id": config.get("hub_model_id"),
         }
 
     except Exception as e:
         import traceback
+        error_msg = f"Training failed: {str(e)}"
+        print(error_msg)
+        print(traceback.format_exc())
         return {
             "status": "error",
             "error": str(e),
@@ -257,5 +314,5 @@ def handler(job):
         }
 
 
-# Start RunPod serverless worker
+# Start the RunPod serverless worker
 runpod.serverless.start({"handler": handler})

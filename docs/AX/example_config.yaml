@@ -1,0 +1,73 @@
+# Example Axolotl Configuration for MagisAI
+# This is a reference config - the handler generates this automatically from job inputs
+
+base_model: Qwen/Qwen2.5-14B-Instruct
+model_type: AutoModelForCausalLM
+tokenizer_type: AutoTokenizer
+trust_remote_code: true
+
+# Dataset - ShareGPT format (chat conversations)
+datasets:
+  - path: /workspace/train.jsonl
+    type: sharegpt
+    conversation: chatml
+
+# For RAFT format, use:
+# datasets:
+#   - path: /workspace/train.jsonl
+#     type: raft
+
+# Output
+output_dir: /workspace/output
+
+# Sequence settings
+sequence_len: 2048
+sample_packing: true
+pad_to_sequence_len: true
+
+# QLoRA settings
+adapter: qlora
+load_in_4bit: true
+lora_r: 32
+lora_alpha: 64
+lora_dropout: 0.05
+lora_target_linear: true
+lora_target_modules:
+  - q_proj
+  - k_proj
+  - v_proj
+  - o_proj
+  - gate_proj
+  - up_proj
+  - down_proj
+
+# Training hyperparameters
+num_epochs: 3
+micro_batch_size: 4
+gradient_accumulation_steps: 4
+learning_rate: 0.0002
+optimizer: adamw_torch
+lr_scheduler: cosine
+warmup_ratio: 0.05
+
+# Memory optimization
+gradient_checkpointing: true
+flash_attention: true
+
+# Precision
+bf16: true
+tf32: true
+
+# Logging & saving
+logging_steps: 10
+save_strategy: steps
+save_steps: 100
+save_total_limit: 2
+
+# Optional: Push to Hugging Face Hub
+# hub_model_id: your-username/model-name
+# push_to_hub: true
+
+# Misc
+seed: 42
+strict: false

@@ -5,3 +5,17 @@ web/dist/
 *.log
 __pycache__/
 .DS_Store
+
+# Archive folder (legacy code, not part of active project)
+Archive/
+
+# Claude Code local settings (may contain API keys)
+.claude/
+
+# Files with credentials
+docs/AX/Untitled
+
+# Training data and exports (large files)
+*.csv
+*.jsonl
+training_package_*.zip
