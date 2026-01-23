@@ -561,6 +561,14 @@ const Icons = {
       <polyline points="1 20 1 14 7 14"/>
       <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
     </svg>
+  ),
+  Docs: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+      <line x1="8" y1="7" x2="16" y2="7"/>
+      <line x1="8" y1="11" x2="14" y2="11"/>
+    </svg>
   )
 }
 
@@ -596,7 +604,8 @@ function Sidebar({ activeSection, setActiveSection, connected, theme, toggleThem
     { id: 'data', icon: Icons.Data, label: 'Data Review' },
     { id: 'training', icon: Icons.Training, label: 'Training' },
     { id: 'evaluate', icon: Icons.Evaluate, label: 'Evaluate' },
-    { id: 'metrics', icon: Icons.Metrics, label: 'Metrics' }
+    { id: 'metrics', icon: Icons.Metrics, label: 'Metrics' },
+    { id: 'docs', icon: Icons.Docs, label: 'Docs' }
   ]
 
   return (
@@ -1753,11 +1762,11 @@ ${trainingType.toUpperCase()}${isRaftPrepared ? ' (with distractor documents)' :
             </p>
             <div className="connection-row">
               <button
-                className="btn btn-primary"
+                className={`btn btn-primary${runpodConnecting ? ' btn-loading' : ''}`}
                 onClick={handleConnect}
                 disabled={runpodConnecting}
               >
-                {runpodConnecting ? 'Connecting...' : connected ? 'Reconnect' : 'Test Connection'}
+                <span>{runpodConnecting ? 'Connecting...' : connected ? 'Reconnect' : 'Test Connection'}</span>
               </button>
               {runpodConnecting && (
                 <span className="connection-status connecting">
@@ -2357,7 +2366,7 @@ Rating:`
               </div>
             )}
             <button
-              className="btn btn-start"
+              className={`btn btn-start${evalProgress.status === 'running' ? ' btn-loading' : ''}`}
               onClick={runEvaluation}
               disabled={!modelResponses.length || evalProgress.status === 'running'}
             >
@@ -2817,6 +2826,385 @@ function Toast({ message, onClose }) {
 }
 
 // ============================================
+// DOCS SECTION
+// ============================================
+
+function DocsSection() {
+  const [activeDoc, setActiveDoc] = useState(null)
+
+  const docs = [
+    {
+      id: 'executive',
+      title: 'Executive Summary',
+      subtitle: 'What MagisAI Training Hub is and how it works',
+      icon: '📋'
+    },
+    {
+      id: 'guide',
+      title: 'User Guide',
+      subtitle: 'Detailed instructions for every feature',
+      icon: '📖'
+    },
+    {
+      id: 'versions',
+      title: 'Version History',
+      subtitle: 'Docker image changes and bug fixes',
+      icon: '🔄'
+    }
+  ]
+
+  if (activeDoc) {
+    return (
+      <div className="docs-section">
+        <div className="section-header">
+          <h2>Documentation</h2>
+          <div className="header-actions">
+            <button className="btn btn-secondary" onClick={() => setActiveDoc(null)}>
+              <Icons.ChevronLeft /> Back
+            </button>
+          </div>
+        </div>
+        <div className="docs-reader glass-card">
+          {activeDoc === 'executive' && <ExecutiveSummaryDoc />}
+          {activeDoc === 'guide' && <UserGuideDoc />}
+          {activeDoc === 'versions' && <VersionHistoryDoc />}
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="docs-section">
+      <div className="section-header">
+        <h2>Documentation</h2>
+      </div>
+      <div className="docs-grid">
+        {docs.map(doc => (
+          <button
+            key={doc.id}
+            className="docs-card glass-card"
+            onClick={() => setActiveDoc(doc.id)}
+          >
+            <span className="docs-card-icon">{doc.icon}</span>
+            <div className="docs-card-text">
+              <h3>{doc.title}</h3>
+              <p>{doc.subtitle}</p>
+            </div>
+            <Icons.ChevronRight />
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function ExecutiveSummaryDoc() {
+  return (
+    <article className="docs-content">
+      <h2>MagisAI Training Hub</h2>
+      <p className="docs-lead">A desktop application that helps you create a custom AI assistant specialized in theological Q&A with a human-in-the-loop approach.</p>
+
+      <h3>The Problem It Solves</h3>
+      <ul>
+        <li><strong>Generic AI models make mistakes</strong> on specialized theological topics</li>
+        <li><strong>Fully automated training</strong> can amplify errors without human oversight</li>
+      </ul>
+
+      <h3>How It Works (5 Steps)</h3>
+      <div className="docs-steps">
+        <div className="docs-step">
+          <span className="docs-step-num">1</span>
+          <div>
+            <strong>Import Your Q&A Data</strong>
+            <p>Load theological Q&A pairs from CSV or PDF files.</p>
+          </div>
+        </div>
+        <div className="docs-step">
+          <span className="docs-step-num">2</span>
+          <div>
+            <strong>Human Review</strong>
+            <p>A reviewer examines each pair: Accept, Reject, or Edit.</p>
+          </div>
+        </div>
+        <div className="docs-step">
+          <span className="docs-step-num">3</span>
+          <div>
+            <strong>Prepare Training Data</strong>
+            <p>Format approved data using RAFT for citation-based responses.</p>
+          </div>
+        </div>
+        <div className="docs-step">
+          <span className="docs-step-num">4</span>
+          <div>
+            <strong>Train on Cloud GPUs</strong>
+            <p>Training runs on RunPod. Click "Start Training" and the app handles everything.</p>
+          </div>
+        </div>
+        <div className="docs-step">
+          <span className="docs-step-num">5</span>
+          <div>
+            <strong>Review & Improve</strong>
+            <p>Low-scoring answers are flagged for review, creating a continuous improvement loop.</p>
+          </div>
+        </div>
+      </div>
+
+      <h3>Key Benefits</h3>
+      <div className="docs-table">
+        <table>
+          <thead><tr><th>Benefit</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td>Quality Control</td><td>Humans approve all training data before AI learns</td></tr>
+            <tr><td>No GPU Required</td><td>Training runs on cloud GPUs (RunPod)</td></tr>
+            <tr><td>Continuous Improvement</td><td>AI mistakes get corrected and fed back</td></tr>
+            <tr><td>Cost Effective</td><td>Pay only for GPU time (~$0.50-2/hour)</td></tr>
+            <tr><td>Specialized Knowledge</td><td>AI understands theological nuances</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Technical Overview</h3>
+      <div className="docs-table">
+        <table>
+          <thead><tr><th>Component</th><th>Technology</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td>Web App</td><td>React + Vite</td><td>User interface</td></tr>
+            <tr><td>Base Models</td><td>Qwen 2.5 (7B-14B)</td><td>Starting point for training</td></tr>
+            <tr><td>Training</td><td>LoRA / QLoRA</td><td>Efficient fine-tuning</td></tr>
+            <tr><td>Cloud GPUs</td><td>RunPod Serverless</td><td>Remote training</td></tr>
+            <tr><td>Vector DB</td><td>Weaviate</td><td>RAFT distractors</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>What is LoRA?</h3>
+      <p>Instead of retraining the entire AI model, LoRA trains a small "adapter" layer (~1-5% of parameters). This means faster training, lower cost ($5-20 per run), and less memory needed.</p>
+
+      <h3>What is RAFT?</h3>
+      <p>RAFT (Retrieval-Augmented Fine-Tuning) trains the AI to read multiple documents, identify relevant ones, extract and cite information, and explain reasoning step-by-step.</p>
+
+      <h3>Cost Estimate</h3>
+      <div className="docs-table">
+        <table>
+          <thead><tr><th>Item</th><th>Cost</th><th>Frequency</th></tr></thead>
+          <tbody>
+            <tr><td>RunPod GPU (A6000)</td><td>~$0.79/hour</td><td>Per training session</td></tr>
+            <tr><td>Typical training run</td><td>~$5-15</td><td>Per 1000 Q&A pairs</td></tr>
+            <tr><td>Weaviate Cloud</td><td>Free tier</td><td>Monthly</td></tr>
+            <tr><td>Software</td><td>Free (open source)</td><td>One-time setup</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </article>
+  )
+}
+
+function UserGuideDoc() {
+  return (
+    <article className="docs-content">
+      <h2>User Guide</h2>
+      <p className="docs-lead">Complete guide to using MagisAI Training Hub for human-in-the-loop AI training.</p>
+
+      <h3>Tab 1: Data Review</h3>
+      <h4>Loading Data</h4>
+      <ul>
+        <li><strong>From CSV:</strong> Click "Load Data" and select your CSV file with Question/Answer columns</li>
+        <li><strong>From JSON:</strong> Click "Resume" to load a previously saved session</li>
+      </ul>
+
+      <h4>Reviewing Q&A Pairs</h4>
+      <div className="docs-table">
+        <table>
+          <thead><tr><th>Action</th><th>Button</th><th>Keyboard</th><th>What it does</th></tr></thead>
+          <tbody>
+            <tr><td>Accept</td><td>Green &#10003;</td><td>A</td><td>Mark as good for training</td></tr>
+            <tr><td>Reject</td><td>Red &#10007;</td><td>R</td><td>Exclude from training</td></tr>
+            <tr><td>Edit</td><td>Blue &#9998;</td><td>E</td><td>Modify the answer text</td></tr>
+            <tr><td>Previous</td><td>&#8592;</td><td>Left Arrow</td><td>Go to previous pair</td></tr>
+            <tr><td>Next</td><td>&#8594;</td><td>Right Arrow</td><td>Go to next pair</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Tab 2: Training</h3>
+      <h4>Step 1: Connect to RunPod</h4>
+      <p>Click "Connect" in the RunPod section and wait for the green "Connected" status.</p>
+
+      <h4>Step 2: Prepare Training Data</h4>
+      <ul>
+        <li><strong>Prepare from Curated:</strong> Click "Prepare RAFT Data" to format accepted Q&A pairs</li>
+        <li><strong>Load Existing:</strong> Select a previously prepared .jsonl file</li>
+      </ul>
+
+      <h4>Step 3: Configure Training</h4>
+      <div className="docs-table">
+        <table>
+          <thead><tr><th>Parameter</th><th>Default</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td>Training Type</td><td>SFT</td><td>SFT, RAFT, or DPO</td></tr>
+            <tr><td>Learning Rate</td><td>2e-5</td><td>How fast the model learns</td></tr>
+            <tr><td>Epochs</td><td>3</td><td>Passes through data</td></tr>
+            <tr><td>Batch Size</td><td>4</td><td>Samples per step</td></tr>
+            <tr><td>LoRA Rank</td><td>16</td><td>Adapter capacity</td></tr>
+            <tr><td>LoRA Alpha</td><td>32</td><td>Scaling factor</td></tr>
+            <tr><td>Max Seq Length</td><td>2048</td><td>Max token length</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>Step 4: Start Training</h4>
+      <p>Click "Start Training", confirm the dialog, and monitor progress via the spinner and console output.</p>
+
+      <h3>Tab 3: Metrics & Evaluation</h3>
+      <h4>Score Colors</h4>
+      <div className="docs-table">
+        <table>
+          <thead><tr><th>Color</th><th>Score</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td><span className="docs-score docs-score-red">Red</span></td><td>&lt; 0.4</td><td>Poor quality</td></tr>
+            <tr><td><span className="docs-score docs-score-orange">Orange</span></td><td>0.4 - 0.6</td><td>Needs improvement</td></tr>
+            <tr><td><span className="docs-score docs-score-yellow">Yellow</span></td><td>0.6 - 0.8</td><td>Acceptable</td></tr>
+            <tr><td><span className="docs-score docs-score-green">Green</span></td><td>&gt; 0.8</td><td>Good quality</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Keyboard Shortcuts</h3>
+      <div className="docs-table">
+        <table>
+          <thead><tr><th>Key</th><th>Action</th><th>Tab</th></tr></thead>
+          <tbody>
+            <tr><td><kbd>A</kbd></td><td>Accept current Q&A</td><td>Data Review</td></tr>
+            <tr><td><kbd>R</kbd></td><td>Reject current Q&A</td><td>Data Review</td></tr>
+            <tr><td><kbd>E</kbd></td><td>Edit current answer</td><td>Data Review</td></tr>
+            <tr><td><kbd>&#8592;</kbd></td><td>Previous Q&A</td><td>Data Review</td></tr>
+            <tr><td><kbd>&#8594;</kbd></td><td>Next Q&A</td><td>Data Review</td></tr>
+            <tr><td><kbd>Ctrl+S</kbd></td><td>Save session</td><td>Data Review</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Troubleshooting</h3>
+      <div className="docs-troubleshoot">
+        <div className="docs-trouble-item">
+          <strong>"RunPod API key not configured"</strong>
+          <p>Add <code>RUNPOD_API_KEY=your_key</code> to your .env file</p>
+        </div>
+        <div className="docs-trouble-item">
+          <strong>"No endpoints found"</strong>
+          <p>Create a serverless endpoint in RunPod dashboard first</p>
+        </div>
+        <div className="docs-trouble-item">
+          <strong>"Job stuck in IN_QUEUE"</strong>
+          <p>Check if your RunPod endpoint has available workers (cold start may be needed)</p>
+        </div>
+        <div className="docs-trouble-item">
+          <strong>Training fails immediately</strong>
+          <p>Check console output and verify endpoint uses correct Docker image</p>
+        </div>
+        <div className="docs-trouble-item">
+          <strong>Out of memory</strong>
+          <p>Reduce batch size, sequence length, or use a smaller model</p>
+        </div>
+        <div className="docs-trouble-item">
+          <strong>"No space left on device"</strong>
+          <p>Create a 100GB Network Volume in RunPod and attach to your endpoint</p>
+        </div>
+      </div>
+    </article>
+  )
+}
+
+function VersionHistoryDoc() {
+  return (
+    <article className="docs-content">
+      <h2>Version History</h2>
+      <p className="docs-lead">Docker image versions and change log for the RunPod serverless handler.</p>
+
+      <h3>Docker Image Versions</h3>
+      <div className="docs-table">
+        <table>
+          <thead><tr><th>Version</th><th>Date</th><th>Status</th><th>Key Change</th></tr></thead>
+          <tbody>
+            <tr><td>v7</td><td>2026-01-18</td><td><span className="docs-badge docs-badge-current">Current</span></td><td>DataCollator, data validation, truncation</td></tr>
+            <tr><td>v6</td><td>2026-01-18</td><td><span className="docs-badge docs-badge-deprecated">Deprecated</span></td><td>padding_side fix, EOS token, debug logging</td></tr>
+            <tr><td>v5</td><td>2026-01-18</td><td><span className="docs-badge docs-badge-deprecated">Deprecated</span></td><td>Message-to-text conversion, all-linear targets</td></tr>
+            <tr><td>v4</td><td>2026-01-18</td><td><span className="docs-badge docs-badge-deprecated">Deprecated</span></td><td>Pinned requirements, memory optimizations</td></tr>
+            <tr><td>v3</td><td>2026-01-17</td><td><span className="docs-badge docs-badge-deprecated">Deprecated</span></td><td>Removed autoawq</td></tr>
+            <tr><td>v2</td><td>2026-01-17</td><td><span className="docs-badge docs-badge-deprecated">Deprecated</span></td><td>SFTConfig parameter fix</td></tr>
+            <tr><td>v1</td><td>2026-01-16</td><td><span className="docs-badge docs-badge-deprecated">Deprecated</span></td><td>Initial release</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>v7 (Current)</h3>
+      <p><strong>Fixes tokenization/batching errors</strong></p>
+      <ul>
+        <li>Added DataCollatorForLanguageModeling for proper batch padding</li>
+        <li>Added truncation_side = "left" to keep assistant responses</li>
+        <li>Data validation loop ensures all text fields are strings</li>
+        <li>Handles nested lists by flattening, filters empty samples</li>
+      </ul>
+
+      <h3>v6</h3>
+      <p><strong>Fixes training loss=0 issue</strong></p>
+      <ul>
+        <li>padding_side = "right" (required for causal LM)</li>
+        <li>EOS token at end of each training sample</li>
+        <li>Changed warmup_ratio → warmup_steps=10</li>
+        <li>Debug logging (sample preview, token count)</li>
+      </ul>
+
+      <h3>v5</h3>
+      <p><strong>Message format conversion</strong></p>
+      <ul>
+        <li>Automatic conversion from chat messages to text</li>
+        <li>target_modules="all-linear"</li>
+        <li>Gradient checkpointing, eager attention</li>
+      </ul>
+
+      <h3>Bug Fix History</h3>
+      <div className="docs-table">
+        <table>
+          <thead><tr><th>Issue</th><th>Error</th><th>Solution</th></tr></thead>
+          <tbody>
+            <tr><td>GraphQL query</td><td>400 Bad Request</td><td>Removed serverlessDiscount field</td></tr>
+            <tr><td>API URL</td><td>404 Not Found</td><td>api.runpod.io → api.runpod.ai</td></tr>
+            <tr><td>AWQ model</td><td>Loading requires auto-awq</td><td>Use non-AWQ models</td></tr>
+            <tr><td>Disk space</td><td>No space left</td><td>100GB Network Volume</td></tr>
+            <tr><td>Dataset</td><td>KeyError: 'text'</td><td>Message-to-text conversion</td></tr>
+            <tr><td>Training</td><td>loss: 0.0</td><td>padding_side, EOS fixes</td></tr>
+            <tr><td>Batching</td><td>Excessive nesting</td><td>DataCollator, validation</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>TRL API Compatibility</h3>
+      <div className="docs-table">
+        <table>
+          <thead><tr><th>TRL Version</th><th>max_seq_length</th><th>tokenizer</th></tr></thead>
+          <tbody>
+            <tr><td>0.8.x</td><td>SFTTrainer</td><td>tokenizer=</td></tr>
+            <tr><td>0.9.x</td><td>SFTConfig</td><td>tokenizer=</td></tr>
+            <tr><td>0.10+</td><td>SFTConfig</td><td>processing_class=</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>How to Update Docker Image</h3>
+      <div className="docs-code">
+        <code>
+          cd server<br/>
+          docker build -t matvg621/magisai-training:v8 .<br/>
+          docker push matvg621/magisai-training:v8
+        </code>
+      </div>
+      <p>Always increment the version number to ensure RunPod pulls the new image.</p>
+    </article>
+  )
+}
+
+// ============================================
 // MAIN APP
 // ============================================
 
@@ -3093,6 +3481,9 @@ function App() {
               setEvalResults={setEvalResults}
               onSaveNotification={showToast}
             />
+          )}
+          {activeSection === 'docs' && (
+            <DocsSection />
           )}
         </main>
       </div>
