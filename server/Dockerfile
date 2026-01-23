@@ -1,12 +1,16 @@
 # MagisAI Training - RunPod Serverless Endpoint
 #
-# Build: docker build -t matvg621/magisai-training:v3 .
-# Push:  docker push matvg621/magisai-training:v3
+# Build: docker build -t matvg621/magisai-training:v7 .
+# Push:  docker push matvg621/magisai-training:v7
 #
 # Deploy as Serverless Endpoint on RunPod with GPU (L40S/A40 for 14B models)
 
-# Use RunPod's pre-built Axolotl image (saves ~15 min build time)
-FROM winglian/axolotl:main-latest
+# Use newer PyTorch base for Blackwell GPU support (sm_120)
+FROM pytorch/pytorch:2.5.1-cuda12.4-cudnn9-devel
+
+# Install Axolotl from source
+RUN pip install --no-cache-dir packaging && \
+    pip install --no-cache-dir "axolotl[deepspeed] @ git+https://github.com/axolotl-ai-cloud/axolotl.git@main"
 
 WORKDIR /app
 

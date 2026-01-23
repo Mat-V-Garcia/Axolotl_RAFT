@@ -17,7 +17,7 @@ from pathlib import Path
 
 
 def generate_axolotl_config(base_model: str, data_path: str, output_dir: str, config: dict) -> dict:
-    """Generate Axolotl YAML configuration."""
+    """Generate Axolotl YAML configuration optimized for 80GB+ GPUs."""
 
     method = config.get("method", "qlora")
     use_raft = config.get("use_raft", False)
@@ -30,17 +30,20 @@ def generate_axolotl_config(base_model: str, data_path: str, output_dir: str, co
 
         "datasets": [{
             "path": data_path,
-            "type": "sharegpt",  # Always use sharegpt - RAFT context is embedded in user message
-            "conversation": "chatml",
+            "type": "chat_template",  # New Axolotl format (replaces deprecated sharegpt)
+            "chat_template": "chatml",
+            "message_field_role": "from",
+            "message_field_content": "value",
+            "field_messages": "conversations",
         }],
 
         "output_dir": output_dir,
         "sequence_len": config.get("max_seq_length", 2048),
-        "sample_packing": True,
+        "sample_packing": True,  # Enabled for 80GB+ GPUs - faster training
         "pad_to_sequence_len": True,
 
         "num_epochs": config.get("num_epochs", 3),
-        "micro_batch_size": config.get("batch_size", 4),
+        "micro_batch_size": config.get("batch_size", 4),  # Larger batch for 80GB GPUs
         "gradient_accumulation_steps": config.get("gradient_accumulation_steps", 4),
         "learning_rate": float(config.get("learning_rate", 2e-4)),
         "optimizer": "adamw_torch",
@@ -48,14 +51,21 @@ def generate_axolotl_config(base_model: str, data_path: str, output_dir: str, co
         "warmup_ratio": 0.05,
 
         "gradient_checkpointing": True,
+        "gradient_checkpointing_kwargs": {
+            "use_reentrant": False
+        },
+
+        # Use flash attention for speed (80GB GPUs support it well)
         "flash_attention": True,
+        "sdp_attention": False,
 
         "logging_steps": 10,
         "save_strategy": "steps",
         "save_steps": 100,
         "save_total_limit": 2,
 
-        "bf16": True,
+        "bf16": "auto",  # Let Axolotl decide based on GPU
+        "fp16": False,
         "tf32": True,
         "seed": 42,
         "strict": False,
@@ -66,6 +76,9 @@ def generate_axolotl_config(base_model: str, data_path: str, output_dir: str, co
         axolotl_config.update({
             "adapter": "qlora",
             "load_in_4bit": True,
+            "bnb_4bit_compute_dtype": "bfloat16",
+            "bnb_4bit_quant_type": "nf4",
+            "bnb_4bit_use_double_quant": True,
             "lora_r": config.get("lora_r", 32),
             "lora_alpha": config.get("lora_alpha", 64),
             "lora_dropout": 0.05,
@@ -78,7 +91,10 @@ def generate_axolotl_config(base_model: str, data_path: str, output_dir: str, co
             "lora_r": config.get("lora_r", 32),
             "lora_alpha": config.get("lora_alpha", 64),
             "lora_dropout": 0.05,
+            "lora_target_modules": ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
             "lora_target_linear": True,
+            # Optional: Use 8-bit base model for even faster training on 80GB GPUs
+            # "load_in_8bit": True,  # Uncomment for faster training with minimal quality loss
         })
     elif method == "full":
         axolotl_config["load_in_8bit"] = False
@@ -189,6 +205,9 @@ def handler(job):
     print(f"  Samples: {len(training_data)}")
     print(f"  Method: {config.get('method', 'qlora')}")
     print(f"  RAFT: {config.get('use_raft', False)}")
+    print(f"  Batch size: {config.get('batch_size', 4)}")
+    print(f"  Sequence length: {config.get('max_seq_length', 2048)}")
+    print(f"  Optimized for 80GB+ GPUs")
 
     try:
         # Create working directory
