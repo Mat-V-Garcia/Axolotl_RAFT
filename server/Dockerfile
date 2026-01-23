@@ -8,8 +8,9 @@
 # Use newer PyTorch base for Blackwell GPU support (sm_120)
 FROM pytorch/pytorch:2.5.1-cuda12.4-cudnn9-devel
 
-# Install Axolotl from source
-RUN pip install --no-cache-dir packaging && \
+# Install git and Axolotl from source
+RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/* && \
+    pip install --no-cache-dir packaging && \
     pip install --no-cache-dir "axolotl[deepspeed] @ git+https://github.com/axolotl-ai-cloud/axolotl.git@main"
 
 WORKDIR /app
