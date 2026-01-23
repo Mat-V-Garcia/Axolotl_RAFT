@@ -86,6 +86,17 @@ Based on [magisailab.com/login-simple.html](https://magisailab.com/login-simple.
 - Hover lift effect with enhanced shadow
 - Consistent padding (20px-24px)
 
+### Dynamic Data Review Card
+- **Content slide animation** - New items slide in from the right with fade
+- **Field stagger animation** - Question and answer fields fade in sequentially
+- **Gradient top border** - Accent gradient line animates on hover
+- **Item counter** - Shows current/total with styled counter badge
+- **Field icons** - "Q" and "A" badges with gradient background
+- **Status badge shimmer** - Subtle shine animation on status badges
+- **Status dot indicator** - Pulsing colored dot based on status
+- **Edit mode glow** - Pulsing border when textarea is active
+- **No data float animation** - Folder icon gently floats when empty
+
 ### Buttons
 - Primary: Gradient background with glow
 - Secondary: Transparent with border
@@ -103,6 +114,15 @@ Based on [magisailab.com/login-simple.html](https://magisailab.com/login-simple.
 - In Progress: Pulsing blue glow
 - Error: Red accent
 - Success: Green accent
+
+### Training Progress Spinner
+- **Triple ring spinner** - Three concentric rings rotating at different speeds
+- **Glowing core** - Pulsing gradient center
+- **Status text** - Shows "QUEUED" or "TRAINING" with pulse animation
+- **Indeterminate progress bar** - Sliding gradient bar for visual feedback
+- Displayed in job cards when status is `IN_PROGRESS` or `IN_QUEUE`
+- Uses accent colors (`--accent-primary`, `--accent-secondary`)
+- Respects `prefers-reduced-motion` setting
 
 ---
 
@@ -162,3 +182,5 @@ Based on [magisailab.com/login-simple.html](https://magisailab.com/login-simple.
 - [ ] Add skeleton loading states
 - [ ] Create a component library/storybook
 - [ ] Add transition animations between pages/views
+- [x] Training progress spinner for in-progress jobs
+- [x] Dynamic card animations for Data Review tab

@@ -53,7 +53,7 @@ function Starfield({ theme }) {
     }
 
     const initStars = () => {
-      const starCount = Math.floor((width * height) / 8000)
+      const starCount = Math.min(Math.floor((width * height) / 10000), 180)
       starsRef.current = Array.from({ length: starCount }, () => ({
         x: Math.random() * width,
         y: Math.random() * height,
@@ -112,28 +112,63 @@ function Starfield({ theme }) {
         ctx.fill()
       })
 
-      // Draw constellation lines between nearby stars
+      // Draw constellation lines using spatial grid for O(n) performance
       const connectionDistance = 120
-      ctx.strokeStyle = isDark
-        ? 'rgba(100, 150, 255, 0.08)'
-        : 'rgba(80, 120, 200, 0.05)'
+      const connDistSq = connectionDistance * connectionDistance
+      const cellSize = connectionDistance
+      const cols = Math.ceil(width / cellSize)
+      const rows = Math.ceil(height / cellSize)
+      const grid = new Array(cols * rows)
+
+      // Place stars into grid cells
+      for (let i = 0; i < stars.length; i++) {
+        const cx = Math.floor(stars[i].x / cellSize)
+        const cy = Math.floor(stars[i].y / cellSize)
+        const key = cy * cols + cx
+        if (!grid[key]) grid[key] = []
+        grid[key].push(i)
+      }
+
       ctx.lineWidth = 0.5
 
-      for (let i = 0; i < stars.length; i++) {
-        for (let j = i + 1; j < stars.length; j++) {
-          const dx = stars[i].x - stars[j].x
-          const dy = stars[i].y - stars[j].y
-          const dist = Math.sqrt(dx * dx + dy * dy)
+      // Only check neighboring cells
+      for (let cy = 0; cy < rows; cy++) {
+        for (let cx = 0; cx < cols; cx++) {
+          const cell = grid[cy * cols + cx]
+          if (!cell) continue
 
-          if (dist < connectionDistance) {
-            const opacity = 1 - (dist / connectionDistance)
-            ctx.strokeStyle = isDark
-              ? `rgba(100, 150, 255, ${opacity * 0.1})`
-              : `rgba(80, 120, 200, ${opacity * 0.06})`
-            ctx.beginPath()
-            ctx.moveTo(stars[i].x, stars[i].y)
-            ctx.lineTo(stars[j].x, stars[j].y)
-            ctx.stroke()
+          // Check current cell and right/bottom neighbors to avoid duplicates
+          const neighbors = [
+            cell,
+            cx + 1 < cols ? grid[cy * cols + cx + 1] : null,
+            cy + 1 < rows ? grid[(cy + 1) * cols + cx] : null,
+            cx + 1 < cols && cy + 1 < rows ? grid[(cy + 1) * cols + cx + 1] : null,
+            cx - 1 >= 0 && cy + 1 < rows ? grid[(cy + 1) * cols + cx - 1] : null
+          ]
+
+          for (let i = 0; i < cell.length; i++) {
+            const si = stars[cell[i]]
+            for (let n = 0; n < neighbors.length; n++) {
+              const neighbor = neighbors[n]
+              if (!neighbor) continue
+              const startJ = neighbor === cell ? i + 1 : 0
+              for (let j = startJ; j < neighbor.length; j++) {
+                const sj = stars[neighbor[j]]
+                const dx = si.x - sj.x
+                const dy = si.y - sj.y
+                const distSq = dx * dx + dy * dy
+                if (distSq < connDistSq) {
+                  const opacity = 1 - (Math.sqrt(distSq) / connectionDistance)
+                  ctx.strokeStyle = isDark
+                    ? `rgba(100, 150, 255, ${opacity * 0.1})`
+                    : `rgba(80, 120, 200, ${opacity * 0.06})`
+                  ctx.beginPath()
+                  ctx.moveTo(si.x, si.y)
+                  ctx.lineTo(sj.x, sj.y)
+                  ctx.stroke()
+                }
+              }
+            }
           }
         }
       }
@@ -265,6 +300,133 @@ function csvToJson(csvText, format = 'sharegpt') {
 }
 
 // ============================================
+// TRAINING PROGRESS INDICATOR
+// ============================================
+
+function TrainingSpinner({ status, message }) {
+  const isActive = status === 'IN_PROGRESS' || status === 'IN_QUEUE'
+
+  if (!isActive) return null
+
+  return (
+    <div className="training-spinner-container">
+      <div className="training-spinner">
+        <div className="spinner-ring"></div>
+        <div className="spinner-ring delay-1"></div>
+        <div className="spinner-ring delay-2"></div>
+        <div className="spinner-core"></div>
+      </div>
+      <div className="spinner-text">
+        <span className="spinner-status">{status === 'IN_QUEUE' ? 'Queued' : 'Training'}</span>
+        {message && <span className="spinner-message">{message}</span>}
+      </div>
+      <div className="training-progress-bar">
+        <div className="progress-indeterminate"></div>
+      </div>
+    </div>
+  )
+}
+
+// ============================================
+// STYLED DIALOG (replaces native alert/confirm)
+// ============================================
+
+function ModalDialog({ message, type, onConfirm, onCancel }) {
+  const dialogRef = useRef(null)
+
+  useEffect(() => {
+    const handleKey = (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        ;(onCancel || onConfirm)()
+      }
+      if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+        e.preventDefault()
+        onConfirm()
+      }
+      // Focus trap: cycle within modal
+      if (e.key === 'Tab' && dialogRef.current) {
+        const focusable = dialogRef.current.querySelectorAll('button:not([disabled])')
+        if (focusable.length === 0) return
+        const first = focusable[0]
+        const last = focusable[focusable.length - 1]
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            e.preventDefault()
+            last.focus()
+          }
+        } else {
+          if (document.activeElement === last) {
+            e.preventDefault()
+            first.focus()
+          }
+        }
+      }
+    }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [onConfirm, onCancel])
+
+  return (
+    <div className="modal-overlay" onClick={onCancel || onConfirm} role="dialog" aria-modal="true" aria-label="Dialog">
+      <div className="modal-dialog glass-card" onClick={(e) => e.stopPropagation()} ref={dialogRef}>
+        <div className="modal-body">
+          <p>{message}</p>
+        </div>
+        <div className="modal-actions">
+          {type === 'confirm' && (
+            <button className="btn btn-secondary" onClick={onCancel}>Cancel</button>
+          )}
+          <button className="btn btn-primary" onClick={onConfirm} autoFocus>
+            OK
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function useDialog() {
+  const [dialogState, setDialogState] = useState(null)
+  const resolveRef = useRef(null)
+
+  const showAlert = useCallback((message) => {
+    return new Promise((resolve) => {
+      resolveRef.current = resolve
+      setDialogState({ message, type: 'alert' })
+    })
+  }, [])
+
+  const showConfirm = useCallback((message) => {
+    return new Promise((resolve) => {
+      resolveRef.current = resolve
+      setDialogState({ message, type: 'confirm' })
+    })
+  }, [])
+
+  const handleConfirm = useCallback(() => {
+    resolveRef.current?.(true)
+    setDialogState(null)
+  }, [])
+
+  const handleCancel = useCallback(() => {
+    resolveRef.current?.(false)
+    setDialogState(null)
+  }, [])
+
+  const dialog = dialogState ? (
+    <ModalDialog
+      message={dialogState.message}
+      type={dialogState.type}
+      onConfirm={handleConfirm}
+      onCancel={dialogState.type === 'confirm' ? handleCancel : undefined}
+    />
+  ) : null
+
+  return { dialog, showAlert, showConfirm }
+}
+
+// ============================================
 // ICON COMPONENTS (SVG-based for better theming)
 // ============================================
 
@@ -313,6 +475,12 @@ const Icons = {
   Moon: () => (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
       <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+    </svg>
+  ),
+  Spinner: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon-spinner">
+      <circle cx="12" cy="12" r="10" strokeOpacity="0.25"/>
+      <path d="M12 2a10 10 0 0 1 10 10" strokeOpacity="1"/>
     </svg>
   ),
   ChevronLeft: () => (
@@ -436,14 +604,10 @@ function Sidebar({ activeSection, setActiveSection, connected, theme, toggleThem
       <div className="sidebar-header">
         <img
           src="/logo.png"
-          alt="MagisAI"
+          alt="MagisAI Training Hub"
           className="logo"
           onError={(e) => { e.target.style.display = 'none' }}
         />
-        <div className="brand">
-          <span className="brand-name">MagisAI</span>
-          <span className="brand-sub">Training Hub</span>
-        </div>
       </div>
 
       <div className="sidebar-divider" />
@@ -479,12 +643,27 @@ function Sidebar({ activeSection, setActiveSection, connected, theme, toggleThem
 // ============================================
 
 function DataReviewSection({ trainingData, setTrainingData, onSaveNotification }) {
+  const { dialog, showAlert, showConfirm } = useDialog()
   const [fileInfo, setFileInfo] = useState(null)
   const [currentIndex, setCurrentIndex] = useState(0)
+  const [displayIndex, setDisplayIndex] = useState(0)
+  const [cardTransition, setCardTransition] = useState('enter')
   const [editMode, setEditMode] = useState(false)
   const [editedAnswer, setEditedAnswer] = useState('')
   const fileInputRef = useRef(null)
   const answerTextareaRef = useRef(null)
+
+  // Handle smooth card transitions
+  useEffect(() => {
+    if (currentIndex !== displayIndex) {
+      setCardTransition('exit')
+      const timer = setTimeout(() => {
+        setDisplayIndex(currentIndex)
+        setCardTransition('enter')
+      }, 200)
+      return () => clearTimeout(timer)
+    }
+  }, [currentIndex, displayIndex])
 
   // Initialize items with status if not present
   const initializeWithStatus = (data) => {
@@ -518,7 +697,7 @@ function DataReviewSection({ trainingData, setTrainingData, onSaveNotification }
           }
           setFileInfo({ name: file.name, type: 'JSON', converted: false })
         } catch (err) {
-          alert('Invalid JSON file: ' + err.message)
+          showAlert('Invalid JSON file: ' + err.message)
           return
         }
       }
@@ -532,6 +711,7 @@ function DataReviewSection({ trainingData, setTrainingData, onSaveNotification }
   }
 
   const currentItem = trainingData[currentIndex]
+  const displayItem = trainingData[displayIndex]
 
   // Get question from any format
   const getQuestion = (item) => {
@@ -631,16 +811,17 @@ function DataReviewSection({ trainingData, setTrainingData, onSaveNotification }
   }, [trainingData, currentIndex, editMode, editedAnswer])
 
   // Accept all pending items
-  const handleAcceptAll = () => {
+  const handleAcceptAll = async () => {
     if (!trainingData.length) return
 
     const pendingCount = trainingData.filter(item => item._status === 'pending').length
     if (pendingCount === 0) {
-      alert('All items have already been reviewed.')
+      showAlert('All items have already been reviewed.')
       return
     }
 
-    if (!confirm(`Accept all ${pendingCount} pending items?`)) return
+    const confirmed = await showConfirm(`Accept all ${pendingCount} pending items?`)
+    if (!confirmed) return
 
     const updatedData = trainingData.map(item => ({
       ...item,
@@ -702,7 +883,7 @@ function DataReviewSection({ trainingData, setTrainingData, onSaveNotification }
         setEditMode(false)
         onSaveNotification?.('Progress restored!')
       } catch (err) {
-        alert('Failed to restore progress: ' + err.message)
+        showAlert('Failed to restore progress: ' + err.message)
       }
     }
     reader.readAsText(file)
@@ -720,7 +901,7 @@ function DataReviewSection({ trainingData, setTrainingData, onSaveNotification }
       .map(({ _id, _status, ...rest }) => rest)
 
     if (exportData.length === 0) {
-      alert('No accepted items to export. Accept some items first.')
+      showAlert('No accepted items to export. Accept some items first.')
       return
     }
 
@@ -804,19 +985,45 @@ function DataReviewSection({ trainingData, setTrainingData, onSaveNotification }
       <div className="section-header">
         <h2>Data Review</h2>
         <div className="header-actions">
-          <button
-            className="btn btn-secondary"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <Icons.Upload />
-            <span>Load Data</span>
-          </button>
-          <button
-            className="btn btn-secondary"
-            onClick={handleResume}
-          >
-            <span>Resume</span>
-          </button>
+          <div className="btn-group">
+            <button
+              className="btn btn-secondary"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Icons.Upload />
+              <span>Load</span>
+            </button>
+            <button
+              className="btn btn-secondary"
+              onClick={handleResume}
+            >
+              <span>Resume</span>
+            </button>
+            <button
+              className="btn btn-secondary"
+              onClick={handleSave}
+              disabled={!trainingData.length}
+            >
+              <span>Save</span>
+            </button>
+          </div>
+          <div className="btn-group">
+            <button
+              className="btn btn-accept-all"
+              onClick={handleAcceptAll}
+              disabled={!trainingData.length}
+            >
+              <span>Accept All</span>
+            </button>
+            <button
+              className="btn btn-primary"
+              onClick={exportAsJsonl}
+              disabled={!trainingData.length}
+            >
+              <Icons.Download />
+              <span>Export</span>
+            </button>
+          </div>
           <input
             ref={resumeInputRef}
             type="file"
@@ -825,28 +1032,6 @@ function DataReviewSection({ trainingData, setTrainingData, onSaveNotification }
             style={{ display: 'none' }}
             aria-label="Load saved session file"
           />
-          <button
-            className="btn btn-accept-all"
-            onClick={handleAcceptAll}
-            disabled={!trainingData.length}
-          >
-            <span>Accept All</span>
-          </button>
-          <button
-            className="btn btn-secondary"
-            onClick={handleSave}
-            disabled={!trainingData.length}
-          >
-            <span>Save (Ctrl+S)</span>
-          </button>
-          <button
-            className="btn btn-primary"
-            onClick={exportAsJsonl}
-            disabled={!trainingData.length}
-          >
-            <Icons.Download />
-            <span>Export JSONL</span>
-          </button>
           <input
             ref={fileInputRef}
             type="file"
@@ -879,40 +1064,47 @@ function DataReviewSection({ trainingData, setTrainingData, onSaveNotification }
         </div>
         <span className="progress-text">
           {stats.total > 0
-            ? `Reviewed ${stats.reviewed} of ${stats.total} (${stats.pending} pending)`
+            ? `${stats.reviewed} / ${stats.total}`
             : 'No data loaded'}
         </span>
       </div>
 
-      <div className="glass-card preview-card">
+      <div className="glass-card preview-card dynamic-card">
         {currentItem ? (
-          <>
+          <div className={`card-content-animated card-${cardTransition}`}>
             <div className="preview-header">
-              <span className={`status-badge ${getStatusColor(currentItem._status)}`}>
-                {(currentItem._status || 'pending').toUpperCase()}
+              <span className={`status-badge ${getStatusColor(displayItem?._status)} status-animated`}>
+                <span className="status-dot-indicator"></span>
+                {(displayItem?._status || 'pending').toUpperCase()}
               </span>
             </div>
             <div className="preview-field">
-              <label>Question</label>
-              <div className="field-content">{getQuestion(currentItem) || '-'}</div>
+              <label>
+                <span className="field-icon">Q</span>
+                Question
+              </label>
+              <div className="field-content">{getQuestion(displayItem) || '-'}</div>
             </div>
             <div className="preview-field">
-              <label>Answer</label>
+              <label>
+                <span className="field-icon">A</span>
+                Answer
+              </label>
               {editMode ? (
                 <textarea
                   ref={answerTextareaRef}
-                  className="field-content answer editable"
+                  className="field-content answer editable editing-active"
                   value={editedAnswer}
                   onChange={(e) => setEditedAnswer(e.target.value)}
                 />
               ) : (
-                <div className="field-content answer">{getAnswer(currentItem) || '-'}</div>
+                <div className="field-content answer">{getAnswer(displayItem) || '-'}</div>
               )}
             </div>
-          </>
+          </div>
         ) : (
           <div className="no-data-message">
-            <div className="no-data-icon">
+            <div className="no-data-icon pulse-icon">
               <Icons.Folder />
             </div>
             <p>No data loaded</p>
@@ -967,6 +1159,7 @@ function DataReviewSection({ trainingData, setTrainingData, onSaveNotification }
           <Icons.ChevronRight />
         </button>
       </div>
+      {dialog}
     </div>
   )
 }
@@ -1280,6 +1473,7 @@ function TrainingSection({
   runpodConfig,
   onSaveNotification
 }) {
+  const { dialog: trainingDialog, showAlert } = useDialog()
   const [raftPreparedData, setRaftPreparedData] = useState([])
   const [preparingRaft, setPreparingRaft] = useState(false)
   const [raftProgress, setRaftProgress] = useState({ current: 0, total: 0 })
@@ -1332,7 +1526,7 @@ function TrainingSection({
   // Prepare RAFT data with Weaviate distractors
   const handlePrepareRaft = async () => {
     if (!acceptedItems.length) {
-      alert('No accepted items to prepare. Accept some items in Data Review first.')
+      showAlert('No accepted items to prepare. Accept some items in Data Review first.')
       return
     }
 
@@ -1484,7 +1678,7 @@ Question: ${question}`
     }
 
     if (dataToExport.length === 0) {
-      alert('No data to export. Accept items first.')
+      showAlert('No data to export. Accept items first.')
       return
     }
 
@@ -1844,6 +2038,7 @@ ${trainingType.toUpperCase()}${isRaftPrepared ? ' (with distractor documents)' :
           )}
         </div>
       </div>
+      {trainingDialog}
     </div>
   )
 }
@@ -1863,6 +2058,7 @@ function EvaluateSection({
   setEvalProgress,
   onSaveNotification
 }) {
+  const { dialog: evalDialog, showAlert } = useDialog()
   const responseFileRef = useRef(null)
 
   // Judge prompt template
@@ -1913,7 +2109,7 @@ Rating:`
         setEvalResults([])
         onSaveNotification?.(`Loaded ${normalized.length} model responses`)
       } catch (err) {
-        alert('Failed to load responses: ' + err.message)
+        showAlert('Failed to load responses: ' + err.message)
       }
     }
     reader.readAsText(file)
@@ -1966,12 +2162,12 @@ Rating:`
   // Run evaluation via RunPod judge endpoint
   const runEvaluation = async () => {
     if (!modelResponses.length) {
-      alert('Load model responses first')
+      showAlert('Load model responses first')
       return
     }
 
     if (!evalConfig.judgeEndpoint || !evalConfig.judgeApiKey) {
-      alert('Configure judge endpoint and API key first')
+      showAlert('Configure judge endpoint and API key first')
       return
     }
 
@@ -2044,7 +2240,7 @@ Rating:`
   // Export evaluation results
   const exportResults = () => {
     if (!evalResults.length) {
-      alert('No evaluation results to export')
+      showAlert('No evaluation results to export')
       return
     }
 
@@ -2086,6 +2282,7 @@ Rating:`
             accept=".json,.jsonl"
             onChange={handleLoadResponses}
             style={{ display: 'none' }}
+            aria-label="Upload model responses file"
           />
           <button
             className="btn btn-primary"
@@ -2151,7 +2348,7 @@ Rating:`
                 <div className="progress-bar-container">
                   <div
                     className="progress-fill"
-                    style={{ width: `${(evalProgress.current / evalProgress.total) * 100}%` }}
+                    style={{ width: evalProgress.total ? `${(evalProgress.current / evalProgress.total) * 100}%` : '0%' }}
                   />
                 </div>
                 <span className="progress-text">
@@ -2234,6 +2431,7 @@ Rating:`
           </div>
         </div>
       )}
+      {evalDialog}
     </div>
   )
 }
@@ -2248,6 +2446,7 @@ function MetricsSection({
   setEvalResults,
   onSaveNotification
 }) {
+  const { dialog: metricsDialog, showAlert } = useDialog()
   const [viewMode, setViewMode] = useState('overview') // 'overview' | 'flagged'
   const [flaggedIndex, setFlaggedIndex] = useState(0)
   const [editedCorrection, setEditedCorrection] = useState('')
@@ -2328,7 +2527,7 @@ function MetricsSection({
   const exportCorrections = () => {
     const corrected = evalResults.filter(r => r._status === 'corrected')
     if (!corrected.length) {
-      alert('No corrections to export')
+      showAlert('No corrections to export')
       return
     }
 
@@ -2442,8 +2641,12 @@ function MetricsSection({
                   <div key={i} className={`job-card ${job.status.toLowerCase().replace('_', '-')}`}>
                     <div className="job-header">
                       <span className="job-id">{job.id?.slice(0, 12) || 'Unknown'}</span>
-                      <span className={`job-status ${job.status.toLowerCase()}`}>{job.status}</span>
+                      <span className={`job-status ${job.status.toLowerCase()}`}>
+                        {(job.status === 'IN_PROGRESS' || job.status === 'IN_QUEUE') && <Icons.Spinner />}
+                        {job.status}
+                      </span>
                     </div>
+                    <TrainingSpinner status={job.status} />
                     <div className="job-details">
                       <span>Model: {job.model}</span>
                       <span>Samples: {job.samples}</span>
@@ -2577,6 +2780,7 @@ function MetricsSection({
           )}
         </div>
       )}
+      {metricsDialog}
     </div>
   )
 }
@@ -2586,15 +2790,28 @@ function MetricsSection({
 // ============================================
 
 function Toast({ message, onClose }) {
+  const [closing, setClosing] = useState(false)
+
   useEffect(() => {
-    const timer = setTimeout(onClose, 3000)
+    const timer = setTimeout(() => setClosing(true), 2600)
     return () => clearTimeout(timer)
-  }, [onClose])
+  }, [])
+
+  useEffect(() => {
+    if (closing) {
+      const timer = setTimeout(onClose, 400)
+      return () => clearTimeout(timer)
+    }
+  }, [closing, onClose])
+
+  const handleClose = () => {
+    setClosing(true)
+  }
 
   return (
-    <div className="toast">
+    <div className={`toast ${closing ? 'toast-exit' : ''}`} role="alert" aria-live="polite">
       <span>{message}</span>
-      <button onClick={onClose} aria-label="Close notification">&times;</button>
+      <button onClick={handleClose} aria-label="Close notification">&times;</button>
     </div>
   )
 }
