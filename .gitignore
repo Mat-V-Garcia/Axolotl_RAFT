@@ -42,3 +42,14 @@ training_progress_*.json
 
 # Temporary directories
 Buttons/
+
+# Firebase (deployment config)
+.firebaserc
+firebase/
+
+# Status/notes files
+PROJECT_STATUS.md
+STATUS.MD
+
+# Legacy docs with credentials
+docs/AX/runpod-s3
