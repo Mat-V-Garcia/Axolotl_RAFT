@@ -2274,7 +2274,7 @@ function TestModelSection({ runpodConfig, onSaveNotification }) {
   const [endpointConnected, setEndpointConnected] = useState(false)
   const [connecting, setConnecting] = useState(false)
   const [inferenceConfig, setInferenceConfig] = useState({
-    maxNewTokens: 512,
+    maxNewTokens: 1024,
     temperature: 0.7,
     topP: 0.9
   })
@@ -2957,7 +2957,7 @@ function TestModelSection({ runpodConfig, onSaveNotification }) {
                     id="max-tokens"
                     type="number"
                     value={inferenceConfig.maxNewTokens}
-                    onChange={(e) => setInferenceConfig({...inferenceConfig, maxNewTokens: parseInt(e.target.value) || 512})}
+                    onChange={(e) => setInferenceConfig({...inferenceConfig, maxNewTokens: parseInt(e.target.value) || 1024})}
                     min="1"
                     max="2048"
                   />

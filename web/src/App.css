@@ -4134,6 +4134,26 @@ select {
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   transform: translateX(0);
   opacity: 1;
+  max-height: calc(100vh - 80px);
+  height: 100%;
+}
+
+/* Sidebar scrollbar styling */
+.test-model-sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.test-model-sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.test-model-sidebar::-webkit-scrollbar-thumb {
+  background: var(--border-default);
+  border-radius: var(--radius-full);
+}
+
+.test-model-sidebar::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
 }
 
 .test-model-sidebar.closed {
