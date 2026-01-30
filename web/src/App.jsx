@@ -1,6 +1,10 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, memo } from 'react'
 import JSZip from 'jszip'
 import yaml from 'js-yaml'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import './App.css'
 
 // ============================================
@@ -2163,6 +2167,93 @@ ${trainingType.toUpperCase()}${isRaftPrepared ? ' (with distractor documents)' :
 }
 
 // ============================================
+// MARKDOWN RENDERER COMPONENT
+// ============================================
+
+const MarkdownRenderer = memo(({ content }) => {
+  return (
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      components={{
+        // Code blocks with syntax highlighting
+        code({ node, inline, className, children, ...props }) {
+          const match = /language-(\w+)/.exec(className || '')
+          const language = match ? match[1] : ''
+
+          if (!inline && (match || String(children).includes('\n'))) {
+            return (
+              <div className="code-block-wrapper">
+                {language && <span className="code-language">{language}</span>}
+                <SyntaxHighlighter
+                  style={oneDark}
+                  language={language || 'text'}
+                  PreTag="div"
+                  customStyle={{
+                    margin: 0,
+                    borderRadius: '0.5rem',
+                    fontSize: '0.875rem',
+                  }}
+                  {...props}
+                >
+                  {String(children).replace(/\n$/, '')}
+                </SyntaxHighlighter>
+              </div>
+            )
+          }
+          return (
+            <code className="inline-code" {...props}>
+              {children}
+            </code>
+          )
+        },
+        // Tables
+        table({ children }) {
+          return (
+            <div className="table-wrapper">
+              <table className="markdown-table">{children}</table>
+            </div>
+          )
+        },
+        // Links open in new tab
+        a({ href, children }) {
+          return (
+            <a href={href} target="_blank" rel="noopener noreferrer" className="markdown-link">
+              {children}
+            </a>
+          )
+        },
+        // Task lists
+        li({ children, className }) {
+          if (className === 'task-list-item') {
+            return <li className="task-list-item">{children}</li>
+          }
+          return <li>{children}</li>
+        },
+        // Blockquotes
+        blockquote({ children }) {
+          return <blockquote className="markdown-blockquote">{children}</blockquote>
+        },
+        // Headings with anchor support
+        h1: ({ children }) => <h1 className="markdown-heading">{children}</h1>,
+        h2: ({ children }) => <h2 className="markdown-heading">{children}</h2>,
+        h3: ({ children }) => <h3 className="markdown-heading">{children}</h3>,
+        h4: ({ children }) => <h4 className="markdown-heading">{children}</h4>,
+        // Horizontal rules
+        hr: () => <hr className="markdown-hr" />,
+        // Images
+        img({ src, alt }) {
+          return <img src={src} alt={alt} className="markdown-image" loading="lazy" />
+        },
+      }}
+    >
+      {content}
+    </ReactMarkdown>
+  )
+})
+
+MarkdownRenderer.displayName = 'MarkdownRenderer'
+
+// ============================================
 // TEST MODEL SECTION
 // ============================================
 
@@ -2176,7 +2267,7 @@ function TestModelSection({ runpodConfig, onSaveNotification }) {
   useEffect(() => {
     localStorage.setItem('inference_endpoint_id', inferenceEndpointId)
   }, [inferenceEndpointId])
-  const [systemPrompt, setSystemPrompt] = useState('You are MagisAI, a helpful Catholic theological assistant. Provide accurate, well-sourced answers based on Catholic teaching, Scripture, and the Catechism. Be clear, charitable, and thorough in your explanations.')
+  const [systemPrompt, setSystemPrompt] = useState('You are MagisAI, a helpful Catholic theological assistant. Provide accurate, well-sourced answers based on Catholic teaching, Scripture, and the Catechism. Be clear, charitable, and thorough in your explanations.\n\nFormat your responses using markdown when helpful: use **bold** for emphasis, bullet points or numbered lists for multiple items, `code` for technical terms, and > blockquotes for citations or important passages.')
   const [messages, setMessages] = useState([])
   const [inputMessage, setInputMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -2999,8 +3090,12 @@ function TestModelSection({ runpodConfig, onSaveNotification }) {
                             <span className="message-timestamp">{formatTime(msg.timestamp)}</span>
                           )}
                         </div>
-                        <div className="message-content">
-                          {msg.content}
+                        <div className={`message-content ${msg.role === 'assistant' ? 'markdown-content' : ''}`}>
+                          {msg.role === 'assistant' ? (
+                            <MarkdownRenderer content={msg.content} />
+                          ) : (
+                            msg.content
+                          )}
                         </div>
                         <div className="message-actions">
                           <button
