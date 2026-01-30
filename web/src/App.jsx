@@ -1612,6 +1612,7 @@ function TrainingSection({
   setRaftConfig,
   weaviateConfig,
   runpodConfig,
+  onUpdateRunpodConfig,
   onSaveNotification
 }) {
   const { dialog: trainingDialog, showAlert } = useDialog()
@@ -1889,14 +1890,31 @@ ${trainingType.toUpperCase()}${isRaftPrepared ? ' (with distractor documents)' :
         <div className="glass-card config-panel">
           <h3>RunPod Connection</h3>
           <div className="config-form">
-            <p className="config-info">
-              Endpoint ID: <code>{runpodConfig.endpointId || 'Not configured'}</code>
-            </p>
+            <div className="form-field">
+              <label htmlFor="runpod-api-key">API Key</label>
+              <input
+                id="runpod-api-key"
+                type="password"
+                value={runpodConfig.apiKey}
+                onChange={(e) => onUpdateRunpodConfig({ ...runpodConfig, apiKey: e.target.value })}
+                placeholder="rpa_xxxxx..."
+              />
+            </div>
+            <div className="form-field">
+              <label htmlFor="runpod-endpoint-id">Training Endpoint ID</label>
+              <input
+                id="runpod-endpoint-id"
+                type="text"
+                value={runpodConfig.endpointId}
+                onChange={(e) => onUpdateRunpodConfig({ ...runpodConfig, endpointId: e.target.value })}
+                placeholder="e.g., abc123xyz"
+              />
+            </div>
             <div className="connection-row">
               <button
                 className={`btn btn-primary${runpodConnecting ? ' btn-loading' : ''}`}
                 onClick={handleConnect}
-                disabled={runpodConnecting}
+                disabled={runpodConnecting || !runpodConfig.apiKey || !runpodConfig.endpointId}
               >
                 <span>{runpodConnecting ? 'Connecting...' : connected ? 'Reconnect' : 'Test Connection'}</span>
               </button>
@@ -4432,10 +4450,16 @@ function App() {
 
   // RunPod configuration - user must enter manually for security
   // SECURITY: API keys should be entered at runtime, not stored in frontend code
-  const runpodConfig = {
-    apiKey: '',
-    endpointId: ''
-  }
+  const [runpodConfig, setRunpodConfig] = useState({
+    apiKey: localStorage.getItem('runpod_api_key') || '',
+    endpointId: localStorage.getItem('runpod_endpoint_id') || ''
+  })
+
+  // Save RunPod config to localStorage (persists across sessions)
+  useEffect(() => {
+    if (runpodConfig.apiKey) localStorage.setItem('runpod_api_key', runpodConfig.apiKey)
+    if (runpodConfig.endpointId) localStorage.setItem('runpod_endpoint_id', runpodConfig.endpointId)
+  }, [runpodConfig.apiKey, runpodConfig.endpointId])
 
   // Evaluation state
   const [evalConfig, setEvalConfig] = useState({
@@ -4653,6 +4677,7 @@ function App() {
               setRaftConfig={setRaftConfig}
               weaviateConfig={weaviateConfig}
               runpodConfig={runpodConfig}
+              onUpdateRunpodConfig={setRunpodConfig}
               onSaveNotification={showToast}
             />
           )}
