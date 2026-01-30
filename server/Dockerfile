@@ -1,9 +1,10 @@
-# MagisAI Training - RunPod Serverless Endpoint
+# MagisAI Training & Inference - RunPod Serverless Endpoint
 #
-# Build: docker build -t matvg621/magisai-training:v8 .
-# Push:  docker push matvg621/magisai-training:v8
+# Build: docker build -t matvg621/magisai-training:v9 .
+# Push:  docker push matvg621/magisai-training:v9
 #
 # Deploy as Serverless Endpoint on RunPod with GPU (80GB+ for 14B LoRA)
+# Supports both training (Axolotl) and inference (LoRA adapters from HF Hub)
 
 # Use newer PyTorch base for Blackwell GPU support (sm_120)
 FROM pytorch/pytorch:2.5.1-cuda12.4-cudnn9-devel
@@ -17,8 +18,8 @@ RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/* && \
 
 WORKDIR /app
 
-# Install only what's not in base image (RunPod SDK)
-RUN pip install --no-cache-dir runpod pyyaml
+# Install RunPod SDK and peft for LoRA inference
+RUN pip install --no-cache-dir runpod pyyaml peft
 
 # Environment variables
 ENV PYTHONUNBUFFERED=1

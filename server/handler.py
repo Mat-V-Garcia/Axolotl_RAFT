@@ -1,10 +1,14 @@
 """
-MagisAI Axolotl Training Handler - RunPod Serverless
+MagisAI Training & Inference Handler - RunPod Serverless
 
-Build: docker build -t matvg621/magisai-training:v1 .
-Push:  docker push matvg621/magisai-training:v1
+Build: docker build -t matvg621/magisai-training:v9 .
+Push:  docker push matvg621/magisai-training:v9
 
 Deploy as a Serverless Endpoint on RunPod.
+
+Supports two actions:
+- "train": Fine-tune a model with Axolotl
+- "inference": Generate responses from a fine-tuned model
 """
 
 import runpod
@@ -12,8 +16,16 @@ import os
 import json
 import yaml
 import subprocess
+import torch
 from datetime import datetime
 from pathlib import Path
+
+# Global model cache for inference (persists across requests on same worker)
+_model_cache = {
+    "model": None,
+    "tokenizer": None,
+    "model_id": None
+}
 
 
 def generate_axolotl_config(base_model: str, data_path: str, output_dir: str, config: dict) -> dict:
@@ -187,12 +199,137 @@ def run_axolotl_training(config_path: str, job) -> dict:
     }
 
 
-def handler(job):
-    """Main serverless handler for training jobs."""
+def load_model_for_inference(model_id: str, base_model: str = None):
+    """Load a model (with optional LoRA adapter) for inference."""
+    global _model_cache
 
-    job_input = job["input"]
+    # Return cached model if same model_id
+    if _model_cache["model"] is not None and _model_cache["model_id"] == model_id:
+        print(f"Using cached model: {model_id}")
+        return _model_cache["model"], _model_cache["tokenizer"]
 
-    # Extract parameters
+    print(f"Loading model: {model_id}")
+
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+    from peft import PeftModel, PeftConfig
+
+    # Try to detect if this is a LoRA adapter or full model
+    try:
+        peft_config = PeftConfig.from_pretrained(model_id)
+        is_adapter = True
+        if base_model is None:
+            base_model = peft_config.base_model_name_or_path
+        print(f"Detected LoRA adapter. Base model: {base_model}")
+    except Exception:
+        is_adapter = False
+        base_model = model_id
+        print(f"Loading as full model: {model_id}")
+
+    # Load base model
+    model = AutoModelForCausalLM.from_pretrained(
+        base_model,
+        device_map="auto",
+        torch_dtype=torch.bfloat16,
+        trust_remote_code=True
+    )
+
+    # Load adapter if applicable
+    if is_adapter:
+        model = PeftModel.from_pretrained(model, model_id)
+        print("LoRA adapter loaded successfully")
+
+    # Load tokenizer from adapter (has chat template) or base model
+    tokenizer = AutoTokenizer.from_pretrained(model_id if is_adapter else base_model)
+
+    # Cache the model
+    _model_cache["model"] = model
+    _model_cache["tokenizer"] = tokenizer
+    _model_cache["model_id"] = model_id
+
+    print("Model ready for inference")
+    return model, tokenizer
+
+
+def run_inference(model, tokenizer, messages: list, config: dict) -> str:
+    """Generate a response from the model."""
+
+    # Apply chat template
+    text = tokenizer.apply_chat_template(
+        messages,
+        tokenize=False,
+        add_generation_prompt=True
+    )
+
+    inputs = tokenizer(text, return_tensors="pt").to(model.device)
+
+    # Generation parameters
+    gen_config = {
+        "max_new_tokens": config.get("max_new_tokens", 512),
+        "temperature": config.get("temperature", 0.7),
+        "top_p": config.get("top_p", 0.9),
+        "do_sample": config.get("temperature", 0.7) > 0,
+        "pad_token_id": tokenizer.eos_token_id,
+    }
+
+    with torch.no_grad():
+        outputs = model.generate(**inputs, **gen_config)
+
+    # Decode and extract assistant response
+    full_response = tokenizer.decode(outputs[0], skip_special_tokens=True)
+
+    # Try to extract just the assistant's response
+    if "<|im_start|>assistant" in full_response:
+        response = full_response.split("<|im_start|>assistant")[-1].strip()
+    elif "assistant\n" in full_response:
+        response = full_response.split("assistant\n")[-1].strip()
+    else:
+        # Return everything after the last user message
+        response = full_response
+
+    return response
+
+
+def handle_inference(job_input: dict):
+    """Handle inference requests."""
+
+    model_id = job_input.get("model_id")
+    if not model_id:
+        return {"status": "error", "error": "No model_id provided"}
+
+    messages = job_input.get("messages", [])
+    if not messages:
+        return {"status": "error", "error": "No messages provided"}
+
+    config = job_input.get("config", {})
+    base_model = job_input.get("base_model")  # Optional override
+
+    print(f"Inference request:")
+    print(f"  Model: {model_id}")
+    print(f"  Messages: {len(messages)}")
+
+    try:
+        model, tokenizer = load_model_for_inference(model_id, base_model)
+        response = run_inference(model, tokenizer, messages, config)
+
+        return {
+            "status": "success",
+            "model_id": model_id,
+            "response": response,
+            "messages_count": len(messages)
+        }
+
+    except Exception as e:
+        import traceback
+        return {
+            "status": "error",
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
+
+
+def handle_training(job, job_input: dict):
+    """Handle training requests."""
+
     base_model = job_input.get("base_model", "Qwen/Qwen2.5-14B-Instruct")
     training_data = job_input.get("training_data", [])
     config = job_input.get("config", {})
@@ -274,6 +411,18 @@ def handler(job):
             "error": str(e),
             "traceback": traceback.format_exc()
         }
+
+
+def handler(job):
+    """Main serverless handler - routes to training or inference."""
+
+    job_input = job["input"]
+    action = job_input.get("action", "train")  # Default to training for backwards compatibility
+
+    if action == "inference":
+        return handle_inference(job_input)
+    else:
+        return handle_training(job, job_input)
 
 
 # Start RunPod serverless worker

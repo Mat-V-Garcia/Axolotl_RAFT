@@ -562,12 +562,121 @@ const Icons = {
       <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
     </svg>
   ),
+  Test: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+    </svg>
+  ),
   Docs: () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
       <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
       <line x1="8" y1="7" x2="16" y2="7"/>
       <line x1="8" y1="11" x2="14" y2="11"/>
+    </svg>
+  ),
+  ChevronDown: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="6 9 12 15 18 9"/>
+    </svg>
+  ),
+  Copy: () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+    </svg>
+  ),
+  Regenerate: () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 2v6h-6"/>
+      <path d="M3 12a9 9 0 0 1 15-6.7L21 8"/>
+      <path d="M3 22v-6h6"/>
+      <path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
+    </svg>
+  ),
+  Disconnect: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18"/>
+      <line x1="6" y1="6" x2="18" y2="18"/>
+    </svg>
+  ),
+  Server: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="2" width="20" height="8" rx="2" ry="2"/>
+      <rect x="2" y="14" width="20" height="8" rx="2" ry="2"/>
+      <line x1="6" y1="6" x2="6.01" y2="6"/>
+      <line x1="6" y1="18" x2="6.01" y2="18"/>
+    </svg>
+  ),
+  AlertCircle: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="12" y1="8" x2="12" y2="12"/>
+      <line x1="12" y1="16" x2="12.01" y2="16"/>
+    </svg>
+  ),
+  Clock: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <polyline points="12 6 12 12 16 14"/>
+    </svg>
+  ),
+  Zap: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+    </svg>
+  ),
+  Activity: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+    </svg>
+  ),
+  Settings: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="3"/>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+    </svg>
+  ),
+  ArrowDown: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="12" y1="5" x2="12" y2="19"/>
+      <polyline points="19 12 12 19 5 12"/>
+    </svg>
+  ),
+  Send: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="22" y1="2" x2="11" y2="13"/>
+      <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+    </svg>
+  ),
+  Trash: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="3 6 5 6 21 6"/>
+      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+    </svg>
+  ),
+  MessageSquare: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+    </svg>
+  ),
+  Keyboard: () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="4" width="20" height="16" rx="2" ry="2"/>
+      <line x1="6" y1="8" x2="6" y2="8"/>
+      <line x1="10" y1="8" x2="10" y2="8"/>
+      <line x1="14" y1="8" x2="14" y2="8"/>
+      <line x1="18" y1="8" x2="18" y2="8"/>
+      <line x1="8" y1="12" x2="8" y2="12"/>
+      <line x1="12" y1="12" x2="12" y2="12"/>
+      <line x1="16" y1="12" x2="16" y2="12"/>
+      <line x1="7" y1="16" x2="17" y2="16"/>
+    </svg>
+  ),
+  PanelLeft: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="2"/>
+      <line x1="9" y1="3" x2="9" y2="21"/>
     </svg>
   )
 }
@@ -603,6 +712,7 @@ function Sidebar({ activeSection, setActiveSection, connected, theme, toggleThem
   const navItems = [
     { id: 'data', icon: Icons.Data, label: 'Data Review' },
     { id: 'training', icon: Icons.Training, label: 'Training' },
+    { id: 'test', icon: Icons.Test, label: 'Test Model' },
     { id: 'evaluate', icon: Icons.Evaluate, label: 'Evaluate' },
     { id: 'metrics', icon: Icons.Metrics, label: 'Metrics' },
     { id: 'docs', icon: Icons.Docs, label: 'Docs' }
@@ -2053,6 +2163,972 @@ ${trainingType.toUpperCase()}${isRaftPrepared ? ' (with distractor documents)' :
 }
 
 // ============================================
+// TEST MODEL SECTION
+// ============================================
+
+function TestModelSection({ runpodConfig, onSaveNotification }) {
+  const [inferenceEndpointId, setInferenceEndpointId] = useState(() => {
+    return localStorage.getItem('inference_endpoint_id') || ''
+  })
+  const [modelId, setModelId] = useState('matvgarcia/MagisAI1.0')
+
+  // Save inference endpoint ID to localStorage
+  useEffect(() => {
+    localStorage.setItem('inference_endpoint_id', inferenceEndpointId)
+  }, [inferenceEndpointId])
+  const [systemPrompt, setSystemPrompt] = useState('You are MagisAI, a helpful Catholic theological assistant. Provide accurate, well-sourced answers based on Catholic teaching, Scripture, and the Catechism. Be clear, charitable, and thorough in your explanations.')
+  const [messages, setMessages] = useState([])
+  const [inputMessage, setInputMessage] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [endpointConnected, setEndpointConnected] = useState(false)
+  const [connecting, setConnecting] = useState(false)
+  const [inferenceConfig, setInferenceConfig] = useState({
+    maxNewTokens: 512,
+    temperature: 0.7,
+    topP: 0.9
+  })
+  // Config panel visibility state - collapsed by default when connected
+  const [configPanelOpen, setConfigPanelOpen] = useState(true)
+  const [collapsedSections, setCollapsedSections] = useState({
+    endpoint: false,
+    model: true  // Collapsed by default
+  })
+  const [copiedIndex, setCopiedIndex] = useState(null)
+  const [showScrollButton, setShowScrollButton] = useState(false)
+  const [textareaHeight, setTextareaHeight] = useState(44)
+  const messagesEndRef = useRef(null)
+  const messagesContainerRef = useRef(null)
+  const textareaRef = useRef(null)
+  const { dialog, showConfirm } = useDialog()
+
+  // Enhanced status tracking
+  const [endpointHealth, setEndpointHealth] = useState(null)
+  const [requestStatus, setRequestStatus] = useState(null) // 'queued' | 'processing' | null
+  const [lastError, setLastError] = useState(null)
+  const healthCheckIntervalRef = useRef(null)
+
+  // Parse RunPod-specific error codes and return user-friendly messages
+  const parseRunPodError = (response, data) => {
+    const status = response?.status
+    const errorMessage = data?.error?.message || data?.error || data?.message
+
+    switch (status) {
+      case 401:
+        return {
+          code: 'AUTH_ERROR',
+          title: 'Authentication Failed',
+          message: 'Invalid API key. Please check your RunPod API key and try again.',
+          action: 'Verify your API key in the RunPod console.'
+        }
+      case 403:
+        return {
+          code: 'FORBIDDEN',
+          title: 'Access Denied',
+          message: 'You do not have permission to access this endpoint.',
+          action: 'Check that the API key has access to this endpoint.'
+        }
+      case 404:
+        return {
+          code: 'NOT_FOUND',
+          title: 'Endpoint Not Found',
+          message: 'The endpoint ID does not exist or has been deleted.',
+          action: 'Verify the endpoint ID in your RunPod console.'
+        }
+      case 429:
+        return {
+          code: 'RATE_LIMIT',
+          title: 'Rate Limited',
+          message: 'Too many requests. The endpoint is being throttled.',
+          action: 'Wait a moment and try again, or upgrade your plan.'
+        }
+      case 500:
+        return {
+          code: 'SERVER_ERROR',
+          title: 'Server Error',
+          message: 'The inference server encountered an internal error.',
+          action: 'Check the model logs in RunPod console.'
+        }
+      case 502:
+      case 503:
+        return {
+          code: 'COLD_START',
+          title: 'Workers Starting',
+          message: 'The endpoint is scaling up. This may take 30-60 seconds for cold start.',
+          action: 'Wait for workers to become available.'
+        }
+      case 504:
+        return {
+          code: 'TIMEOUT',
+          title: 'Request Timeout',
+          message: 'The request took too long to complete.',
+          action: 'Try a shorter prompt or increase timeout settings.'
+        }
+      default:
+        if (errorMessage?.includes('model') && errorMessage?.includes('not found')) {
+          return {
+            code: 'MODEL_NOT_FOUND',
+            title: 'Model Not Found',
+            message: `The model or LoRA adapter could not be loaded: ${errorMessage}`,
+            action: 'Check that the model ID is correct and accessible.'
+          }
+        }
+        if (errorMessage?.includes('loading') || errorMessage?.includes('initializing')) {
+          return {
+            code: 'MODEL_LOADING',
+            title: 'Model Loading',
+            message: 'The model is still loading into GPU memory.',
+            action: 'Wait 1-2 minutes for the model to finish loading.'
+          }
+        }
+        return {
+          code: 'UNKNOWN',
+          title: 'Request Failed',
+          message: errorMessage || `HTTP ${status}: Unknown error`,
+          action: 'Check the endpoint logs for more details.'
+        }
+    }
+  }
+
+  // Get endpoint health status
+  const getEndpointHealthStatus = (health) => {
+    if (!health) return { status: 'UNKNOWN', label: 'Unknown', color: 'muted' }
+
+    const { workers, jobs } = health
+    const idleWorkers = workers?.idle || 0
+    const runningWorkers = workers?.running || 0
+    const totalWorkers = idleWorkers + runningWorkers
+    const queuedJobs = jobs?.inQueue || 0
+
+    if (totalWorkers === 0 && queuedJobs === 0) {
+      return { status: 'IDLE', label: 'Idle (No Workers)', color: 'warning' }
+    }
+    if (totalWorkers === 0 && queuedJobs > 0) {
+      return { status: 'SCALING', label: 'Scaling Up', color: 'warning' }
+    }
+    if (queuedJobs > 5) {
+      return { status: 'THROTTLED', label: 'High Queue', color: 'warning' }
+    }
+    if (idleWorkers > 0) {
+      return { status: 'READY', label: 'Ready', color: 'success' }
+    }
+    if (runningWorkers > 0) {
+      return { status: 'BUSY', label: 'Processing', color: 'info' }
+    }
+    return { status: 'READY', label: 'Ready', color: 'success' }
+  }
+
+  // Fetch endpoint health
+  const fetchEndpointHealth = async () => {
+    if (!inferenceEndpointId || !runpodConfig.apiKey || !endpointConnected) return
+
+    try {
+      const response = await fetch(`https://api.runpod.ai/v2/${inferenceEndpointId}/health`, {
+        headers: { 'Authorization': `Bearer ${runpodConfig.apiKey}` }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setEndpointHealth(data)
+        setLastError(null)
+      } else if (response.status === 401 || response.status === 403) {
+        // Auth error - disconnect
+        setEndpointConnected(false)
+        setLastError(parseRunPodError(response, null))
+        stopHealthCheck()
+      }
+    } catch (error) {
+      // Network error - don't disconnect, just note the issue
+      console.warn('Health check failed:', error.message)
+    }
+  }
+
+  // Start periodic health check
+  const startHealthCheck = () => {
+    stopHealthCheck() // Clear any existing interval
+    fetchEndpointHealth() // Immediate check
+    healthCheckIntervalRef.current = setInterval(fetchEndpointHealth, 10000) // Every 10 seconds
+  }
+
+  // Stop periodic health check
+  const stopHealthCheck = () => {
+    if (healthCheckIntervalRef.current) {
+      clearInterval(healthCheckIntervalRef.current)
+      healthCheckIntervalRef.current = null
+    }
+  }
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => stopHealthCheck()
+  }, [])
+
+
+  // Test connection to vLLM inference endpoint
+  const testConnection = async () => {
+    if (!inferenceEndpointId) {
+      onSaveNotification('Please enter a vLLM Endpoint ID')
+      return
+    }
+    if (!runpodConfig.apiKey) {
+      onSaveNotification('Please configure API Key in the Training section first')
+      return
+    }
+
+    setConnecting(true)
+    setLastError(null)
+
+    try {
+      const response = await fetch(`https://api.runpod.ai/v2/${inferenceEndpointId}/health`, {
+        headers: {
+          'Authorization': `Bearer ${runpodConfig.apiKey}`
+        }
+      })
+
+      if (response.ok) {
+        const healthData = await response.json()
+        setEndpointHealth(healthData)
+        setEndpointConnected(true)
+        onSaveNotification('Connected to inference endpoint!')
+        // Auto-collapse endpoint config when connected
+        setCollapsedSections(prev => ({ ...prev, endpoint: true }))
+        // Start periodic health checks
+        startHealthCheck()
+      } else {
+        const data = await response.json().catch(() => ({}))
+        const error = parseRunPodError(response, data)
+        setLastError(error)
+        setEndpointConnected(false)
+        onSaveNotification(`${error.title}: ${error.message}`)
+      }
+    } catch (error) {
+      setEndpointConnected(false)
+      setLastError({
+        code: 'NETWORK_ERROR',
+        title: 'Connection Failed',
+        message: error.message || 'Could not reach RunPod API',
+        action: 'Check your internet connection and try again.'
+      })
+      onSaveNotification(`Connection error: ${error.message}`)
+    } finally {
+      setConnecting(false)
+    }
+  }
+
+  // Disconnect from endpoint
+  const disconnect = () => {
+    stopHealthCheck()
+    setEndpointConnected(false)
+    setEndpointHealth(null)
+    setLastError(null)
+    setRequestStatus(null)
+    setCollapsedSections(prev => ({ ...prev, endpoint: false }))
+    onSaveNotification('Disconnected from endpoint')
+  }
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (messagesContainerRef.current) {
+      const container = messagesContainerRef.current
+      const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100
+      if (isNearBottom || messages.length <= 1) {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+      }
+    }
+  }, [messages])
+
+  // Handle scroll position for scroll-to-bottom button
+  const handleMessagesScroll = useCallback(() => {
+    if (messagesContainerRef.current) {
+      const container = messagesContainerRef.current
+      const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100
+      setShowScrollButton(!isNearBottom && messages.length > 2)
+    }
+  }, [messages.length])
+
+  // Scroll to bottom button click
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [])
+
+  // Auto-resize textarea
+  const handleTextareaChange = useCallback((e) => {
+    setInputMessage(e.target.value)
+    // Auto-resize
+    if (textareaRef.current) {
+      textareaRef.current.style.height = '44px'
+      const newHeight = Math.min(textareaRef.current.scrollHeight, 150)
+      textareaRef.current.style.height = `${newHeight}px`
+      setTextareaHeight(newHeight)
+    }
+  }, [])
+
+  // Auto-collapse config panel when connected
+  useEffect(() => {
+    if (endpointConnected) {
+      // Small delay to allow user to see connection success
+      const timer = setTimeout(() => {
+        setConfigPanelOpen(false)
+      }, 1000)
+      return () => clearTimeout(timer)
+    }
+  }, [endpointConnected])
+
+  // Format timestamp
+  const formatTime = (date) => {
+    return new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  }
+
+  // Export chat as JSON
+  const exportChat = useCallback(() => {
+    if (messages.length === 0) return
+    const chatData = {
+      exported_at: new Date().toISOString(),
+      system_prompt: systemPrompt,
+      messages: messages.map((msg, i) => ({
+        ...msg,
+        timestamp: msg.timestamp || new Date().toISOString()
+      }))
+    }
+    const blob = new Blob([JSON.stringify(chatData, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `chat-export-${new Date().toISOString().slice(0, 10)}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+    onSaveNotification('Chat exported successfully')
+  }, [messages, systemPrompt, onSaveNotification])
+
+  // Word and character count
+  const inputStats = {
+    chars: inputMessage.length,
+    words: inputMessage.trim() ? inputMessage.trim().split(/\s+/).length : 0
+  }
+
+  // Estimate token count (rough approximation: ~4 chars per token)
+  const estimateTokens = (text) => Math.ceil(text.length / 4)
+
+  const totalTokens = messages.reduce((acc, msg) => acc + estimateTokens(msg.content), 0) +
+    estimateTokens(systemPrompt) + estimateTokens(inputMessage)
+
+  const sendMessage = async () => {
+    if (!inputMessage.trim() || isLoading || !endpointConnected) return
+
+    const userMessage = { role: 'user', content: inputMessage.trim(), timestamp: new Date().toISOString() }
+    const newMessages = [...messages, userMessage]
+    setMessages(newMessages)
+    setInputMessage('')
+    // Reset textarea height
+    if (textareaRef.current) {
+      textareaRef.current.style.height = '44px'
+      setTextareaHeight(44)
+    }
+    setIsLoading(true)
+    setLastError(null)
+    setRequestStatus('queued')
+
+    // Build messages array with system prompt (OpenAI format)
+    const apiMessages = []
+    if (systemPrompt.trim()) {
+      apiMessages.push({ role: 'system', content: systemPrompt.trim() })
+    }
+    apiMessages.push(...newMessages.map(m => ({ role: m.role, content: m.content })))
+
+    const startTime = Date.now()
+
+    try {
+      // Check if endpoint needs cold start
+      const health = endpointHealth
+      if (health && health.workers?.idle === 0 && health.workers?.running === 0) {
+        setRequestStatus('cold_start')
+      }
+
+      // Use v9 handler serverless endpoint (runsync for synchronous inference)
+      const response = await fetch(`https://api.runpod.ai/v2/${inferenceEndpointId}/runsync`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${runpodConfig.apiKey}`
+        },
+        body: JSON.stringify({
+          input: {
+            action: 'inference',
+            model_id: modelId,  // HuggingFace model/adapter path
+            messages: apiMessages,
+            config: {
+              max_new_tokens: inferenceConfig.maxNewTokens,
+              temperature: inferenceConfig.temperature,
+              top_p: inferenceConfig.topP
+            }
+          }
+        })
+      })
+
+      setRequestStatus('processing')
+
+      const data = await response.json()
+
+      // v9 handler returns { output: { status, response, ... } } or { status, output: { ... } }
+      const output = data.output || data
+
+      if (output.status === 'success' && output.response) {
+        const assistantMessage = { role: 'assistant', content: output.response, timestamp: new Date().toISOString() }
+        setMessages([...newMessages, assistantMessage])
+        setLastError(null)
+      } else if (!response.ok || data.error || output.status === 'error') {
+        const error = parseRunPodError(response, data)
+        if (output.error) {
+          error.message = output.error
+        }
+        setLastError(error)
+        onSaveNotification(`${error.title}: ${error.message}`)
+        setMessages(messages)
+      } else {
+        setLastError({
+          code: 'UNEXPECTED_RESPONSE',
+          title: 'Unexpected Response',
+          message: 'The server returned an unexpected response format.',
+          action: 'Check that the v9 inference endpoint is running correctly.'
+        })
+        onSaveNotification(`Unexpected response: ${JSON.stringify(data)}`)
+        setMessages(messages)
+      }
+    } catch (error) {
+      const elapsed = Date.now() - startTime
+      // Timeout errors after 30+ seconds are likely cold start issues
+      if (elapsed > 30000 || error.message?.includes('timeout')) {
+        setLastError({
+          code: 'TIMEOUT',
+          title: 'Request Timeout',
+          message: 'The request timed out. This may be due to cold start or a long-running inference.',
+          action: 'Try again - the worker should be warm now.'
+        })
+      } else {
+        setLastError({
+          code: 'NETWORK_ERROR',
+          title: 'Request Failed',
+          message: error.message || 'Network error during inference',
+          action: 'Check your connection and try again.'
+        })
+      }
+      onSaveNotification(`Request failed: ${error.message}`)
+      setMessages(messages)
+    } finally {
+      setIsLoading(false)
+      setRequestStatus(null)
+      // Refresh health status after request completes
+      fetchEndpointHealth()
+    }
+  }
+
+  const clearChat = async () => {
+    if (messages.length === 0) return
+    const confirmed = await showConfirm('Clear all messages? This cannot be undone.')
+    if (confirmed) {
+      setMessages([])
+      onSaveNotification('Chat cleared')
+    }
+  }
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      sendMessage()
+    }
+  }
+
+  const copyMessage = async (content, index) => {
+    try {
+      await navigator.clipboard.writeText(content)
+      setCopiedIndex(index)
+      setTimeout(() => setCopiedIndex(null), 2000)
+    } catch (err) {
+      onSaveNotification('Failed to copy message')
+    }
+  }
+
+  const regenerateResponse = async () => {
+    if (messages.length < 2 || isLoading) return
+    // Remove last assistant message and resend
+    const lastUserIndex = messages.length - 2
+    if (messages[lastUserIndex]?.role === 'user') {
+      const newMessages = messages.slice(0, -1)
+      setMessages(newMessages)
+      setInputMessage(messages[lastUserIndex].content)
+      // Trigger send after state update
+      setTimeout(() => {
+        document.querySelector('.chat-input-area .btn-primary')?.click()
+      }, 100)
+    }
+  }
+
+  const toggleSection = (section) => {
+    setCollapsedSections(prev => ({ ...prev, [section]: !prev[section] }))
+  }
+
+  // Validate endpoint ID format
+
+  // Get disabled reason for send button
+  const getDisabledReason = () => {
+    if (!endpointConnected) return 'Connect to endpoint first'
+    if (!inputMessage.trim()) return 'Enter a message'
+    if (isLoading) return 'Waiting for response...'
+    return null
+  }
+
+  return (
+    <div className="section-content test-model-section">
+      {dialog}
+
+      {/* Floating Config Toggle Button */}
+      <button
+        className={`config-toggle-fab ${configPanelOpen ? 'active' : ''} ${endpointConnected ? 'connected' : ''}`}
+        onClick={() => setConfigPanelOpen(!configPanelOpen)}
+        aria-label={configPanelOpen ? 'Hide configuration panel' : 'Show configuration panel'}
+        title={configPanelOpen ? 'Hide settings' : 'Show settings'}
+      >
+        <Icons.Settings />
+        {!endpointConnected && <span className="fab-badge">!</span>}
+      </button>
+
+      <div className={`test-model-layout ${configPanelOpen ? 'config-open' : 'config-closed'}`}>
+        {/* Sidebar - Configuration */}
+        <div className={`test-model-sidebar ${configPanelOpen ? 'open' : 'closed'}`}>
+          <div className="sidebar-header-mini">
+            <h3><Icons.Settings /> Configuration</h3>
+            <button
+              className="sidebar-close-btn"
+              onClick={() => setConfigPanelOpen(false)}
+              aria-label="Close configuration panel"
+            >
+              <Icons.X />
+            </button>
+          </div>
+          {/* Endpoint Connection */}
+          <div className="config-card">
+            <h3>vLLM Inference Endpoint</h3>
+            <div className="form-grid">
+              <div className="form-group full-width">
+                <label htmlFor="inference-endpoint-id">Endpoint ID</label>
+                <input
+                  id="inference-endpoint-id"
+                  type="text"
+                  value={inferenceEndpointId}
+                  onChange={(e) => setInferenceEndpointId(e.target.value)}
+                  placeholder="e.g., abc123xyz"
+                  disabled={endpointConnected}
+                />
+                <span className="form-hint">Your vLLM serverless endpoint ID from RunPod (uses API key from Training section)</span>
+              </div>
+              <div className="form-group full-width">
+                <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+                  <button
+                    className={`btn ${endpointConnected ? 'btn-success' : 'btn-primary'}`}
+                    onClick={testConnection}
+                    disabled={connecting || endpointConnected || !inferenceEndpointId}
+                    style={{ flex: 1 }}
+                  >
+                    {connecting ? (
+                      <><Icons.Spinner /> Connecting...</>
+                    ) : endpointConnected ? (
+                      <><span className="status-dot connected" /> Connected</>
+                    ) : (
+                      'Connect'
+                    )}
+                  </button>
+                  {endpointConnected && (
+                    <button
+                      className="btn btn-disconnect"
+                      onClick={disconnect}
+                      title="Disconnect"
+                    >
+                      <Icons.Disconnect />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Endpoint Status Panel - shown when connected */}
+          {endpointConnected && endpointHealth && (
+            <div className="config-card endpoint-status-card">
+              <div className="endpoint-status-header">
+                <Icons.Server />
+                <span>Endpoint Status</span>
+                <span className={`endpoint-status-badge status-${getEndpointHealthStatus(endpointHealth).color}`}>
+                  {getEndpointHealthStatus(endpointHealth).label}
+                </span>
+              </div>
+              <div className="endpoint-status-grid">
+                <div className="endpoint-stat">
+                  <span className="endpoint-stat-label">Workers</span>
+                  <span className="endpoint-stat-value">
+                    <span className="workers-idle">{endpointHealth.workers?.idle || 0} idle</span>
+                    <span className="workers-separator">/</span>
+                    <span className="workers-running">{endpointHealth.workers?.running || 0} running</span>
+                  </span>
+                </div>
+                <div className="endpoint-stat">
+                  <span className="endpoint-stat-label">Queue</span>
+                  <span className="endpoint-stat-value">
+                    {endpointHealth.jobs?.inQueue || 0} jobs
+                  </span>
+                </div>
+                <div className="endpoint-stat">
+                  <span className="endpoint-stat-label">Completed</span>
+                  <span className="endpoint-stat-value endpoint-stat-success">
+                    {endpointHealth.jobs?.completed || 0}
+                  </span>
+                </div>
+                <div className="endpoint-stat">
+                  <span className="endpoint-stat-label">Failed</span>
+                  <span className="endpoint-stat-value endpoint-stat-error">
+                    {endpointHealth.jobs?.failed || 0}
+                  </span>
+                </div>
+              </div>
+              {(endpointHealth.workers?.idle === 0 && endpointHealth.workers?.running === 0) && (
+                <div className="endpoint-cold-start-warning">
+                  <Icons.AlertCircle />
+                  <span>No active workers. First request may take 30-60 seconds (cold start).</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Error Alert - shown when there's an error */}
+          {lastError && (
+            <div className={`config-card error-alert-card error-${lastError.code?.toLowerCase() || 'unknown'}`}>
+              <div className="error-alert-header">
+                <Icons.AlertCircle />
+                <span className="error-alert-title">{lastError.title}</span>
+                <button
+                  className="error-alert-dismiss"
+                  onClick={() => setLastError(null)}
+                  aria-label="Dismiss error"
+                >
+                  <Icons.X />
+                </button>
+              </div>
+              <p className="error-alert-message">{lastError.message}</p>
+              {lastError.action && (
+                <p className="error-alert-action">
+                  <strong>Suggestion:</strong> {lastError.action}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Model Configuration */}
+          <div className={`config-card ${collapsedSections.model ? 'collapsed' : ''}`}>
+            <div
+              className="config-card-header"
+              onClick={() => toggleSection('model')}
+              role="button"
+              aria-expanded={!collapsedSections.model}
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && toggleSection('model')}
+            >
+              <h3>Model Configuration</h3>
+              <span className="collapse-icon">
+                <Icons.ChevronDown />
+              </span>
+            </div>
+            <div className="config-card-content">
+              <div className="form-grid">
+                <div className="form-group full-width">
+                  <label htmlFor="model-id">Model / Adapter ID</label>
+                  <input
+                    id="model-id"
+                    type="text"
+                    value={modelId}
+                    onChange={(e) => setModelId(e.target.value)}
+                    placeholder="e.g., matvgarcia/MagisAI1.0"
+                  />
+                  <span className="form-hint">HuggingFace model or LoRA adapter path (e.g., "matvgarcia/MagisAI1.0" or "Qwen/Qwen2.5-14B-Instruct")</span>
+                </div>
+                <div className="form-group full-width">
+                  <label htmlFor="system-prompt">System Prompt</label>
+                  <textarea
+                    id="system-prompt"
+                    value={systemPrompt}
+                    onChange={(e) => setSystemPrompt(e.target.value)}
+                    placeholder="Enter a system prompt to guide the model's behavior..."
+                    rows={3}
+                    className="system-prompt-input"
+                  />
+                  <span className="form-hint">This prompt will be included at the start of every conversation</span>
+                </div>
+                <div className="form-group">
+                  <label htmlFor="max-tokens">Max Tokens</label>
+                  <input
+                    id="max-tokens"
+                    type="number"
+                    value={inferenceConfig.maxNewTokens}
+                    onChange={(e) => setInferenceConfig({...inferenceConfig, maxNewTokens: parseInt(e.target.value) || 512})}
+                    min="1"
+                    max="2048"
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="temperature">Temperature</label>
+                  <input
+                    id="temperature"
+                    type="number"
+                    value={inferenceConfig.temperature}
+                    onChange={(e) => setInferenceConfig({...inferenceConfig, temperature: parseFloat(e.target.value) || 0.7})}
+                    min="0"
+                    max="2"
+                    step="0.1"
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="top-p">Top P</label>
+                  <input
+                    id="top-p"
+                    type="number"
+                    value={inferenceConfig.topP}
+                    onChange={(e) => setInferenceConfig({...inferenceConfig, topP: parseFloat(e.target.value) || 0.9})}
+                    min="0"
+                    max="1"
+                    step="0.1"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main - Chat Interface */}
+        <div className="test-model-main">
+          <div className="chat-card-enhanced">
+            {/* Chat Header with Actions */}
+            <div className="chat-header-enhanced">
+              <div className="chat-header-left">
+                <Icons.MessageSquare />
+                <h3>Chat</h3>
+                {endpointConnected && (
+                  <span className="connection-badge">
+                    <span className="pulse-dot"></span>
+                    Connected
+                  </span>
+                )}
+              </div>
+              <div className="chat-header-actions">
+                <button
+                  className="chat-header-btn"
+                  onClick={exportChat}
+                  disabled={messages.length === 0}
+                  title="Export chat"
+                  aria-label="Export chat as JSON"
+                >
+                  <Icons.Download />
+                </button>
+                <button
+                  className="chat-header-btn"
+                  onClick={clearChat}
+                  disabled={messages.length === 0}
+                  title="Clear chat"
+                  aria-label="Clear all messages"
+                >
+                  <Icons.Trash />
+                </button>
+              </div>
+            </div>
+
+            {/* Chat Messages Area with Animated Background */}
+            <div className="chat-messages-wrapper">
+              <div className="chat-ambient-bg"></div>
+              <div
+                ref={messagesContainerRef}
+                className="chat-messages-enhanced"
+                role="log"
+                aria-live="polite"
+                aria-label="Chat conversation"
+                onScroll={handleMessagesScroll}
+              >
+                {!endpointConnected && (
+                  <div className="chat-overlay-warning-enhanced">
+                    <div className="chat-overlay-content">
+                      <div className="overlay-icon-wrapper">
+                        <Icons.MessageSquare />
+                      </div>
+                      <h4>Connect to Start Chatting</h4>
+                      <p>Configure your vLLM inference endpoint to begin testing your model</p>
+                      <button
+                        className="btn btn-primary"
+                        onClick={() => {
+                          setConfigPanelOpen(true)
+                          setTimeout(() => document.getElementById('inference-endpoint-id')?.focus(), 300)
+                        }}
+                      >
+                        <Icons.Settings /> Open Configuration
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {messages.length === 0 && endpointConnected ? (
+                  <div className="chat-empty-enhanced">
+                    <div className="empty-icon-wrapper">
+                      <Icons.MessageSquare />
+                    </div>
+                    <h4>Start a Conversation</h4>
+                    <p>Your model is ready. Ask a question to begin!</p>
+                    <div className="keyboard-hint">
+                      <span className="kbd">Enter</span> to send
+                      <span className="kbd-separator">|</span>
+                      <span className="kbd">Shift</span>+<span className="kbd">Enter</span> for new line
+                    </div>
+                  </div>
+                ) : (
+                  messages.map((msg, index) => (
+                    <div
+                      key={index}
+                      className={`chat-message-enhanced ${msg.role} ${index === messages.length - 1 ? 'newest' : ''}`}
+                      role="article"
+                      aria-label={`${msg.role === 'user' ? 'Your' : 'Assistant'} message`}
+                    >
+                      <div className="message-avatar">
+                        {msg.role === 'user' ? 'U' : 'M'}
+                      </div>
+                      <div className="message-body">
+                        <div className="message-header">
+                          <span className="message-sender">{msg.role === 'user' ? 'You' : 'MagisAI'}</span>
+                          {msg.timestamp && (
+                            <span className="message-timestamp">{formatTime(msg.timestamp)}</span>
+                          )}
+                        </div>
+                        <div className="message-content">
+                          {msg.content}
+                        </div>
+                        <div className="message-actions">
+                          <button
+                            className={`msg-action-btn ${copiedIndex === index ? 'copied' : ''}`}
+                            onClick={() => copyMessage(msg.content, index)}
+                            title="Copy message"
+                            aria-label="Copy message to clipboard"
+                          >
+                            {copiedIndex === index ? <Icons.Check /> : <Icons.Copy />}
+                            <span>{copiedIndex === index ? 'Copied' : 'Copy'}</span>
+                          </button>
+                          {msg.role === 'assistant' && index === messages.length - 1 && (
+                            <button
+                              className="msg-action-btn"
+                              onClick={regenerateResponse}
+                              title="Regenerate response"
+                              aria-label="Regenerate this response"
+                              disabled={isLoading}
+                            >
+                              <Icons.Regenerate />
+                              <span>Regenerate</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+                {isLoading && (
+                  <div className={`chat-message-enhanced assistant loading ${requestStatus === 'cold_start' ? 'cold-start' : ''}`} role="status" aria-label="Assistant is typing">
+                    <div className="message-avatar">M</div>
+                    <div className="message-body">
+                      <div className="message-header">
+                        <span className="message-sender">MagisAI</span>
+                      </div>
+                      <div className="message-content typing">
+                        <div className="typing-indicator-enhanced">
+                          <span></span><span></span><span></span>
+                        </div>
+                        <span className="loading-text">
+                          {requestStatus === 'queued' && 'Waiting in queue...'}
+                          {requestStatus === 'cold_start' && 'Starting worker (this may take up to 60 seconds)...'}
+                          {requestStatus === 'processing' && 'Generating response...'}
+                          {!requestStatus && 'Processing...'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* Scroll to Bottom Button */}
+              {showScrollButton && (
+                <button
+                  className="scroll-to-bottom-btn"
+                  onClick={scrollToBottom}
+                  aria-label="Scroll to bottom"
+                >
+                  <Icons.ArrowDown />
+                </button>
+              )}
+            </div>
+
+            {/* Enhanced Input Area */}
+            <div className="chat-input-enhanced">
+              {/* Info Bar */}
+              <div className="input-info-bar">
+                <div className="input-stats">
+                  <span className="stat-item">
+                    <Icons.Keyboard />
+                    {inputStats.words} words / {inputStats.chars} chars
+                  </span>
+                  <span className={`stat-item tokens ${totalTokens > 3000 ? 'warning' : ''} ${totalTokens > 3800 ? 'danger' : ''}`}>
+                    ~{totalTokens.toLocaleString()} tokens
+                  </span>
+                </div>
+                {requestStatus && (
+                  <div className="request-status-badge">
+                    {requestStatus === 'queued' && <><Icons.Clock /> Queued</>}
+                    {requestStatus === 'cold_start' && <><Icons.Zap /> Cold Start</>}
+                    {requestStatus === 'processing' && <><Icons.Activity /> Generating</>}
+                  </div>
+                )}
+              </div>
+
+              {/* Textarea Container */}
+              <div className="textarea-container">
+                <textarea
+                  ref={textareaRef}
+                  value={inputMessage}
+                  onChange={handleTextareaChange}
+                  onKeyDown={handleKeyDown}
+                  placeholder={endpointConnected ? "Type your message..." : "Connect to endpoint to start chatting..."}
+                  disabled={isLoading || !endpointConnected}
+                  aria-label="Message input"
+                  style={{ height: textareaHeight }}
+                />
+                <button
+                  className="send-btn"
+                  onClick={sendMessage}
+                  disabled={!inputMessage.trim() || isLoading || !endpointConnected}
+                  aria-label="Send message"
+                  title={getDisabledReason() || 'Send message'}
+                >
+                  {isLoading ? <Icons.Spinner /> : <Icons.Send />}
+                </button>
+              </div>
+
+              {/* Keyboard Shortcuts */}
+              <div className="input-hints">
+                <span className="hint"><span className="kbd">Enter</span> Send</span>
+                <span className="hint"><span className="kbd">Shift+Enter</span> New line</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Config Panel Overlay */}
+      {configPanelOpen && (
+        <div className="config-overlay-mobile" onClick={() => setConfigPanelOpen(false)} />
+      )}
+    </div>
+  )
+}
+
+// ============================================
 // EVALUATION SECTION
 // ============================================
 
@@ -3457,6 +4533,12 @@ function App() {
               raftConfig={raftConfig}
               setRaftConfig={setRaftConfig}
               weaviateConfig={weaviateConfig}
+              runpodConfig={runpodConfig}
+              onSaveNotification={showToast}
+            />
+          )}
+          {activeSection === 'test' && (
+            <TestModelSection
               runpodConfig={runpodConfig}
               onSaveNotification={showToast}
             />
