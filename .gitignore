@@ -1,9 +1,22 @@
+# Environment files (contain secrets)
 .env
+web/.env
+
+# Node.js
 node_modules/
 web/node_modules/
 web/dist/
-*.log
+
+# Python
 __pycache__/
+*.pyc
+venv/
+
+# Logs
+*.log
+logs/
+
+# OS files
 .DS_Store
 
 # Archive folder (legacy code, not part of active project)
@@ -18,4 +31,14 @@ docs/AX/Untitled
 # Training data and exports (large files)
 *.csv
 *.jsonl
+*.json
 training_package_*.zip
+training_progress_*.json
+
+# Images (experiments/screenshots)
+*.png
+*.jpg
+*.jpeg
+
+# Temporary directories
+Buttons/
