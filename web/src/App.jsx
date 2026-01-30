@@ -4357,12 +4357,81 @@ function UserGuideDoc() {
       </ol>
 
       <h3>Evaluate</h3>
-      <p>Score model responses using LLM-as-judge:</p>
+      <p>The Evaluate page uses LLM-as-judge to objectively score your fine-tuned model's responses against expected answers.</p>
+
+      <h4>Why Evaluate Matters for Fine-Tuning</h4>
+      <p>Evaluation is a critical part of the fine-tuning iteration cycle:</p>
+      <ul>
+        <li><strong>Measure Quality:</strong> Quantify how well your model learned from training data</li>
+        <li><strong>Identify Gaps:</strong> Find specific questions where the model underperforms</li>
+        <li><strong>Guide Data Curation:</strong> Flagged responses reveal which topics need more training examples</li>
+        <li><strong>Compare Checkpoints:</strong> Evaluate different training runs to select the best model</li>
+        <li><strong>Validate RAFT:</strong> Confirm the model correctly extracts answers from context documents</li>
+      </ul>
+
+      <h4>The Evaluation Process</h4>
       <ol>
-        <li>Load model responses (JSON file with question/response pairs)</li>
-        <li>Configure a judge endpoint (any OpenAI-compatible API)</li>
-        <li>Run evaluation to get quality scores</li>
+        <li><strong>Test Your Model:</strong> Use the Test Model tab to generate responses to your evaluation questions</li>
+        <li><strong>Export Responses:</strong> Save the question/response pairs to a JSON file</li>
+        <li><strong>Load in Evaluate:</strong> Upload the response file with expected answers</li>
+        <li><strong>Configure Judge:</strong> Set up a separate LLM endpoint (ideally a larger/smarter model like GPT-4 or Claude)</li>
+        <li><strong>Run Evaluation:</strong> The judge scores each response on a 1-5 scale</li>
+        <li><strong>Review Results:</strong> Analyze flagged items and score distribution</li>
       </ol>
+
+      <h4>Scoring Rubric</h4>
+      <p>The judge rates each response on this scale:</p>
+      <div className="docs-table">
+        <table>
+          <thead><tr><th>Score</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>5</td><td>Fully correct and well-explained</td></tr>
+            <tr><td>4</td><td>Mostly correct with minor omissions</td></tr>
+            <tr><td>3</td><td>Partially correct but missing key points</td></tr>
+            <tr><td>2</td><td>Mostly incorrect with some accurate elements</td></tr>
+            <tr><td>1</td><td>Completely incorrect or contradicts expected answer</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>Response File Format</h4>
+      <p>Load a JSON or JSONL file with these fields:</p>
+      <div className="docs-code">
+        <code>{`{"question": "...", "expected_answer": "...", "model_response": "..."}`}</code>
+      </div>
+      <p>Alternative field names are supported: <code>instruction</code>, <code>answer</code>, <code>response</code>, <code>generated</code></p>
+
+      <h4>Suggested Workflow</h4>
+      <div className="docs-troubleshoot">
+        <div className="docs-trouble-item">
+          <strong>Pre-Training Baseline</strong>
+          <p>Evaluate the base model (before fine-tuning) to establish a baseline score.</p>
+        </div>
+        <div className="docs-trouble-item">
+          <strong>Post-Training Comparison</strong>
+          <p>Evaluate your fine-tuned model on the same questions. Score should improve significantly.</p>
+        </div>
+        <div className="docs-trouble-item">
+          <strong>Flag Threshold</strong>
+          <p>Set threshold to 0.5 (score 3+) for strict filtering, or 0.25 (score 2+) for lenient. Items below threshold are flagged for review.</p>
+        </div>
+        <div className="docs-trouble-item">
+          <strong>Iterative Improvement</strong>
+          <p>Export flagged items, improve their training examples, add to dataset, and retrain. Repeat until average score reaches target.</p>
+        </div>
+        <div className="docs-trouble-item">
+          <strong>Judge Selection</strong>
+          <p>Use a stronger model as judge (e.g., GPT-4, Claude) for more reliable scoring. Avoid using the same model family you're fine-tuning.</p>
+        </div>
+      </div>
+
+      <h4>Interpreting Results</h4>
+      <ul>
+        <li><strong>Average Score 0.8+</strong> - Excellent performance, model has learned well</li>
+        <li><strong>Average Score 0.6-0.8</strong> - Good but room for improvement, review flagged items</li>
+        <li><strong>Average Score &lt;0.6</strong> - Model needs more training data or hyperparameter tuning</li>
+        <li><strong>High Error Count</strong> - Check judge endpoint configuration and connectivity</li>
+      </ul>
 
       <h3>Keyboard Shortcuts</h3>
       <div className="docs-table">
