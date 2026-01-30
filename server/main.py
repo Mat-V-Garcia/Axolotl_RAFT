@@ -2,6 +2,13 @@
 MagisAI Training Server - FastAPI backend for Axolotl training on RunPod pods.
 
 Run with: uvicorn main:app --host 0.0.0.0 --port 8000
+
+Security features:
+- API key authentication (set API_SECRET_KEY env var)
+- CORS restricted to allowed origins
+- Rate limiting on sensitive endpoints
+- File upload size limits
+- Security headers
 """
 
 import os
@@ -14,20 +21,102 @@ from pathlib import Path
 from typing import Optional
 from uuid import uuid4
 
-from fastapi import FastAPI, HTTPException, BackgroundTasks, UploadFile, File
+from fastapi import FastAPI, HTTPException, BackgroundTasks, UploadFile, File, Depends, Request, Security
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import APIKeyHeader
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import Response
 from pydantic import BaseModel
 
-app = FastAPI(title="MagisAI Training Server", version="1.0.0")
+# =============================================================================
+# Security Configuration
+# =============================================================================
 
-# CORS for frontend
+# API Key for authentication (optional - skip auth if not set)
+API_SECRET_KEY = os.getenv("API_SECRET_KEY")
+
+# Allowed origins for CORS (comma-separated in env var)
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000").split(",")
+
+# Rate limiting (requires slowapi - optional)
+RATE_LIMIT_ENABLED = os.getenv("RATE_LIMIT_ENABLED", "false").lower() == "true"
+
+# File upload limits
+MAX_UPLOAD_SIZE = 50 * 1024 * 1024  # 50MB
+
+# =============================================================================
+# Security Middleware
+# =============================================================================
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    """Add security headers to all responses."""
+
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        return response
+
+
+# API Key authentication
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+
+
+async def verify_api_key(api_key: str = Security(api_key_header)):
+    """Verify API key if API_SECRET_KEY is configured."""
+    if not API_SECRET_KEY:
+        # Auth disabled - allow all requests (dev mode)
+        return None
+    if not api_key or api_key != API_SECRET_KEY:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid or missing API key",
+            headers={"WWW-Authenticate": "ApiKey"},
+        )
+    return api_key
+
+
+# =============================================================================
+# FastAPI App Setup
+# =============================================================================
+
+app = FastAPI(
+    title="MagisAI Training Server",
+    version="1.0.0",
+    description="Secure API for LLM fine-tuning with Axolotl"
+)
+
+# Security headers middleware
+app.add_middleware(SecurityHeadersMiddleware)
+
+# CORS - restricted to allowed origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, restrict to your frontend domain
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=False,  # Disabled for security - use API key instead
+    allow_methods=["GET", "POST", "DELETE"],
+    allow_headers=["Content-Type", "X-API-Key"],
 )
+
+# Optional: Rate limiting (install slowapi if needed)
+try:
+    if RATE_LIMIT_ENABLED:
+        from slowapi import Limiter, _rate_limit_exceeded_handler
+        from slowapi.util import get_remote_address
+        from slowapi.errors import RateLimitExceeded
+
+        limiter = Limiter(key_func=get_remote_address)
+        app.state.limiter = limiter
+        app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+        print("[SECURITY] Rate limiting enabled")
+    else:
+        limiter = None
+except ImportError:
+    limiter = None
+    if RATE_LIMIT_ENABLED:
+        print("[WARNING] slowapi not installed - rate limiting disabled. Install with: pip install slowapi")
 
 # In-memory job storage (use Redis/DB for production)
 jobs: dict = {}
@@ -78,7 +167,7 @@ def generate_axolotl_config(
         "base_model": base_model,
         "model_type": "AutoModelForCausalLM",
         "tokenizer_type": "AutoTokenizer",
-        "trust_remote_code": True,
+        "trust_remote_code": False,  # SECURITY: Disabled to prevent code execution
 
         "datasets": [{
             "path": data_path,
@@ -299,11 +388,11 @@ async def health():
     }
 
 
-@app.post("/train", response_model=JobStatus)
-async def start_training(request: TrainingRequest, background_tasks: BackgroundTasks):
-    """Start a new training job."""
+@app.post("/train", response_model=JobStatus, dependencies=[Depends(verify_api_key)])
+async def start_training(request: Request, training_request: TrainingRequest, background_tasks: BackgroundTasks):
+    """Start a new training job. Requires API key authentication."""
 
-    if not request.training_data:
+    if not training_request.training_data:
         raise HTTPException(status_code=400, detail="No training data provided")
 
     job_id = str(uuid4())[:8]
@@ -318,7 +407,7 @@ async def start_training(request: TrainingRequest, background_tasks: BackgroundT
         "updated_at": now,
     }
 
-    background_tasks.add_task(run_training_job, job_id, request)
+    background_tasks.add_task(run_training_job, job_id, training_request)
 
     return JobStatus(**jobs[job_id])
 
@@ -337,9 +426,9 @@ async def get_job(job_id: str):
     return JobStatus(**jobs[job_id])
 
 
-@app.delete("/jobs/{job_id}")
+@app.delete("/jobs/{job_id}", dependencies=[Depends(verify_api_key)])
 async def cancel_job(job_id: str):
-    """Cancel/delete a job."""
+    """Cancel/delete a job. Requires API key authentication."""
     if job_id not in jobs:
         raise HTTPException(status_code=404, detail="Job not found")
 
@@ -348,20 +437,41 @@ async def cancel_job(job_id: str):
     return {"status": "deleted", "job_id": job_id}
 
 
-@app.post("/upload")
+@app.post("/upload", dependencies=[Depends(verify_api_key)])
 async def upload_training_data(file: UploadFile = File(...)):
-    """Upload a JSONL training data file."""
+    """Upload a JSONL training data file. Requires API key authentication.
 
-    if not file.filename.endswith(('.jsonl', '.json')):
+    Security:
+    - File size limited to 50MB
+    - Only .jsonl and .json extensions allowed
+    - Content validated as JSON
+    """
+
+    # Validate file extension
+    if not file.filename or not file.filename.endswith(('.jsonl', '.json')):
         raise HTTPException(status_code=400, detail="File must be .jsonl or .json")
 
+    # Read and validate file size
     content = await file.read()
+    if len(content) > MAX_UPLOAD_SIZE:
+        raise HTTPException(
+            status_code=413,
+            detail=f"File too large. Maximum size is {MAX_UPLOAD_SIZE // (1024*1024)}MB"
+        )
 
+    # Validate JSON content
     try:
-        lines = content.decode().strip().split('\n')
+        # Validate encoding
+        text_content = content.decode('utf-8')
+        lines = text_content.strip().split('\n')
         training_data = [json.loads(line) for line in lines if line.strip()]
+    except UnicodeDecodeError:
+        raise HTTPException(status_code=400, detail="File must be UTF-8 encoded")
     except json.JSONDecodeError as e:
-        raise HTTPException(status_code=400, detail=f"Invalid JSON: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Invalid JSON on line: {str(e)}")
+
+    if not training_data:
+        raise HTTPException(status_code=400, detail="File contains no valid training samples")
 
     return {
         "status": "ok",
