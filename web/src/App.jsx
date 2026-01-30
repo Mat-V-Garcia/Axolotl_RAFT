@@ -1611,6 +1611,7 @@ function TrainingSection({
   raftConfig,
   setRaftConfig,
   weaviateConfig,
+  onUpdateWeaviateConfig,
   runpodConfig,
   onUpdateRunpodConfig,
   onSaveNotification
@@ -1963,14 +1964,41 @@ ${trainingType.toUpperCase()}${isRaftPrepared ? ' (with distractor documents)' :
             <div className="glass-card config-panel">
               <h3>Weaviate (Distractors)</h3>
               <div className="config-form">
-                <p className="config-info">
-                  Collection: <code>{weaviateConfig.collection || 'Not configured'}</code>
-                </p>
+                <div className="form-field">
+                  <label htmlFor="weaviate-url">Weaviate URL</label>
+                  <input
+                    id="weaviate-url"
+                    type="text"
+                    value={weaviateConfig.url}
+                    onChange={(e) => onUpdateWeaviateConfig({ ...weaviateConfig, url: e.target.value })}
+                    placeholder="https://your-cluster.weaviate.network"
+                  />
+                </div>
+                <div className="form-field">
+                  <label htmlFor="weaviate-api-key">Weaviate API Key</label>
+                  <input
+                    id="weaviate-api-key"
+                    type="password"
+                    value={weaviateConfig.apiKey}
+                    onChange={(e) => onUpdateWeaviateConfig({ ...weaviateConfig, apiKey: e.target.value })}
+                    placeholder="Your Weaviate API key"
+                  />
+                </div>
+                <div className="form-field">
+                  <label htmlFor="weaviate-collection">Collection Name</label>
+                  <input
+                    id="weaviate-collection"
+                    type="text"
+                    value={weaviateConfig.collection}
+                    onChange={(e) => onUpdateWeaviateConfig({ ...weaviateConfig, collection: e.target.value })}
+                    placeholder="MagisDocuments"
+                  />
+                </div>
                 <div className="connection-row">
                   <button
                     className="btn btn-secondary"
                     onClick={testWeaviateConnection}
-                    disabled={weaviateStatus.connecting}
+                    disabled={weaviateStatus.connecting || !weaviateConfig.url}
                   >
                     {weaviateStatus.connecting ? 'Connecting...' : 'Test Connection'}
                   </button>
@@ -2145,6 +2173,37 @@ ${trainingType.toUpperCase()}${isRaftPrepared ? ' (with distractor documents)' :
                 min="128"
                 step="128"
               />
+            </div>
+          </div>
+        </div>
+
+        {/* HuggingFace Hub Settings */}
+        <div className="glass-card config-panel">
+          <h3>HuggingFace Hub (Optional)</h3>
+          <div className="config-form">
+            <p className="config-info hint-text">
+              Push your trained model/adapter to HuggingFace Hub after training completes.
+            </p>
+            <div className="form-field">
+              <label htmlFor="hf-token">HuggingFace Token</label>
+              <input
+                id="hf-token"
+                type="password"
+                value={config.hub_token}
+                onChange={(e) => setConfig({ ...config, hub_token: e.target.value })}
+                placeholder="hf_xxxxx..."
+              />
+            </div>
+            <div className="form-field">
+              <label htmlFor="hf-model-id">Hub Model ID</label>
+              <input
+                id="hf-model-id"
+                type="text"
+                value={config.hub_model_id}
+                onChange={(e) => setConfig({ ...config, hub_model_id: e.target.value })}
+                placeholder="username/model-name"
+              />
+              <span className="form-hint">Where to push the model (e.g., "matvgarcia/MagisAI-v2")</span>
             </div>
           </div>
         </div>
@@ -4442,11 +4501,18 @@ function App() {
 
   // Weaviate configuration - user must enter manually for security
   // SECURITY: API keys should never be hardcoded or auto-loaded from env in frontend
-  const [weaviateConfig] = useState({
-    url: '',
-    apiKey: '',
-    collection: 'MagisDocuments'
+  const [weaviateConfig, setWeaviateConfig] = useState({
+    url: localStorage.getItem('weaviate_url') || '',
+    apiKey: localStorage.getItem('weaviate_api_key') || '',
+    collection: localStorage.getItem('weaviate_collection') || 'MagisDocuments'
   })
+
+  // Save Weaviate config to localStorage
+  useEffect(() => {
+    if (weaviateConfig.url) localStorage.setItem('weaviate_url', weaviateConfig.url)
+    if (weaviateConfig.apiKey) localStorage.setItem('weaviate_api_key', weaviateConfig.apiKey)
+    if (weaviateConfig.collection) localStorage.setItem('weaviate_collection', weaviateConfig.collection)
+  }, [weaviateConfig.url, weaviateConfig.apiKey, weaviateConfig.collection])
 
   // RunPod configuration - user must enter manually for security
   // SECURITY: API keys should be entered at runtime, not stored in frontend code
@@ -4487,11 +4553,19 @@ function App() {
     learning_rate: '2e-4',
     num_epochs: 3,
     batch_size: 4,
+    hub_token: localStorage.getItem('hf_token') || '',
+    hub_model_id: localStorage.getItem('hf_model_id') || '',
     gradient_accumulation_steps: 4,
     max_seq_length: 2048,
     lora_r: 32,
     lora_alpha: 64
   })
+
+  // Save HuggingFace config to localStorage
+  useEffect(() => {
+    if (config.hub_token) localStorage.setItem('hf_token', config.hub_token)
+    if (config.hub_model_id) localStorage.setItem('hf_model_id', config.hub_model_id)
+  }, [config.hub_token, config.hub_model_id])
 
   const apiKeyRef = useRef('')
   const endpointIdRef = useRef('')
@@ -4676,6 +4750,7 @@ function App() {
               raftConfig={raftConfig}
               setRaftConfig={setRaftConfig}
               weaviateConfig={weaviateConfig}
+              onUpdateWeaviateConfig={setWeaviateConfig}
               runpodConfig={runpodConfig}
               onUpdateRunpodConfig={setRunpodConfig}
               onSaveNotification={showToast}
