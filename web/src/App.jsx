@@ -5,6 +5,24 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
+
+// =============================================================================
+// SECURITY: URL Sanitization
+// =============================================================================
+// Prevents XSS attacks via javascript: and data: URLs in markdown content
+
+const sanitizeUrl = (url) => {
+  if (!url || typeof url !== 'string') return ''
+  const trimmed = url.trim().toLowerCase()
+  // Block dangerous URL schemes
+  if (trimmed.startsWith('javascript:') ||
+      trimmed.startsWith('data:') ||
+      trimmed.startsWith('vbscript:')) {
+    console.warn('[SECURITY] Blocked potentially malicious URL:', url.substring(0, 50))
+    return ''
+  }
+  return url
+}
 import './App.css'
 
 // ============================================
@@ -2214,10 +2232,12 @@ const MarkdownRenderer = memo(({ content }) => {
             </div>
           )
         },
-        // Links open in new tab
+        // Links open in new tab - with URL sanitization
         a({ href, children }) {
+          const safeHref = sanitizeUrl(href)
+          if (!safeHref) return <span className="markdown-link-blocked">{children}</span>
           return (
-            <a href={href} target="_blank" rel="noopener noreferrer" className="markdown-link">
+            <a href={safeHref} target="_blank" rel="noopener noreferrer" className="markdown-link">
               {children}
             </a>
           )
@@ -2240,9 +2260,11 @@ const MarkdownRenderer = memo(({ content }) => {
         h4: ({ children }) => <h4 className="markdown-heading">{children}</h4>,
         // Horizontal rules
         hr: () => <hr className="markdown-hr" />,
-        // Images
+        // Images - with URL sanitization
         img({ src, alt }) {
-          return <img src={src} alt={alt} className="markdown-image" loading="lazy" />
+          const safeSrc = sanitizeUrl(src)
+          if (!safeSrc) return <span className="markdown-image-blocked">[Image blocked]</span>
+          return <img src={safeSrc} alt={alt} className="markdown-image" loading="lazy" />
         },
       }}
     >
@@ -4400,17 +4422,19 @@ function App() {
     oracleProbability: 0.8
   })
 
-  // Weaviate configuration - loaded from environment variables
+  // Weaviate configuration - user must enter manually for security
+  // SECURITY: API keys should never be hardcoded or auto-loaded from env in frontend
   const [weaviateConfig] = useState({
-    url: import.meta.env.VITE_WEAVIATE_URL || '',
-    apiKey: import.meta.env.VITE_WEAVIATE_API_KEY || '',
-    collection: import.meta.env.VITE_WEAVIATE_COLLECTION || 'MagisDocuments'
+    url: '',
+    apiKey: '',
+    collection: 'MagisDocuments'
   })
 
-  // RunPod configuration - loaded from environment variables
+  // RunPod configuration - user must enter manually for security
+  // SECURITY: API keys should be entered at runtime, not stored in frontend code
   const runpodConfig = {
-    apiKey: import.meta.env.VITE_RUNPOD_API_KEY || '',
-    endpointId: import.meta.env.VITE_RUNPOD_ENDPOINT_ID || ''
+    apiKey: '',
+    endpointId: ''
   }
 
   // Evaluation state
@@ -4538,7 +4562,7 @@ function App() {
               lora_r: config.lora_r,
               lora_alpha: config.lora_alpha,
               use_raft: dataFormat === 'raft',
-              hub_token: import.meta.env.VITE_HF_TOKEN || '',
+              hub_token: config.hub_token || '',  // SECURITY: Must be entered by user
               hub_model_id: config.hub_model_id || ''
             }
           }
