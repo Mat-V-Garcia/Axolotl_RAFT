@@ -4104,8 +4104,8 @@ function DocsSection() {
 
   const docs = [
     {
-      id: 'executive',
-      title: 'Executive Summary',
+      id: 'about',
+      title: 'About',
       subtitle: 'What MagisAI Training Hub is and how it works',
       icon: '📋'
     },
@@ -4118,7 +4118,7 @@ function DocsSection() {
     {
       id: 'versions',
       title: 'Version History',
-      subtitle: 'Docker image changes and bug fixes',
+      subtitle: 'Docker image changes and updates',
       icon: '🔄'
     }
   ]
@@ -4135,7 +4135,7 @@ function DocsSection() {
           </div>
         </div>
         <div className="docs-reader glass-card">
-          {activeDoc === 'executive' && <ExecutiveSummaryDoc />}
+          {activeDoc === 'about' && <AboutDoc />}
           {activeDoc === 'guide' && <UserGuideDoc />}
           {activeDoc === 'versions' && <VersionHistoryDoc />}
         </div>
@@ -4168,103 +4168,98 @@ function DocsSection() {
   )
 }
 
-function ExecutiveSummaryDoc() {
+function AboutDoc() {
   return (
     <article className="docs-content">
       <h2>MagisAI Training Hub</h2>
-      <p className="docs-lead">A desktop application that helps you create a custom AI assistant specialized in theological Q&A with a human-in-the-loop approach.</p>
+      <p className="docs-lead">A web-based LLM fine-tuning platform using Axolotl on RunPod Serverless. Supports LoRA/QLoRA, RAFT, and full fine-tuning with HuggingFace Hub integration.</p>
 
-      <h3>The Problem It Solves</h3>
+      <h3>Features</h3>
       <ul>
-        <li><strong>Generic AI models make mistakes</strong> on specialized theological topics</li>
-        <li><strong>Fully automated training</strong> can amplify errors without human oversight</li>
+        <li><strong>Human-in-the-loop training</strong> - Review and curate data before training</li>
+        <li><strong>Multiple training methods</strong> - SFT, RAFT, LoRA, QLoRA, and full fine-tuning</li>
+        <li><strong>Cloud GPU training</strong> - RunPod Serverless with auto-scaling</li>
+        <li><strong>Model testing</strong> - Chat with your fine-tuned models</li>
+        <li><strong>Model evaluation</strong> - Score responses with LLM-as-judge</li>
+        <li><strong>HuggingFace integration</strong> - Push trained adapters to the Hub</li>
       </ul>
 
-      <h3>How It Works (5 Steps)</h3>
-      <div className="docs-steps">
-        <div className="docs-step">
-          <span className="docs-step-num">1</span>
-          <div>
-            <strong>Import Your Q&A Data</strong>
-            <p>Load theological Q&A pairs from CSV or PDF files.</p>
-          </div>
-        </div>
-        <div className="docs-step">
-          <span className="docs-step-num">2</span>
-          <div>
-            <strong>Human Review</strong>
-            <p>A reviewer examines each pair: Accept, Reject, or Edit.</p>
-          </div>
-        </div>
-        <div className="docs-step">
-          <span className="docs-step-num">3</span>
-          <div>
-            <strong>Prepare Training Data</strong>
-            <p>Format approved data using RAFT for citation-based responses.</p>
-          </div>
-        </div>
-        <div className="docs-step">
-          <span className="docs-step-num">4</span>
-          <div>
-            <strong>Train on Cloud GPUs</strong>
-            <p>Training runs on RunPod. Click "Start Training" and the app handles everything.</p>
-          </div>
-        </div>
-        <div className="docs-step">
-          <span className="docs-step-num">5</span>
-          <div>
-            <strong>Review & Improve</strong>
-            <p>Low-scoring answers are flagged for review, creating a continuous improvement loop.</p>
-          </div>
-        </div>
-      </div>
-
-      <h3>Key Benefits</h3>
-      <div className="docs-table">
-        <table>
-          <thead><tr><th>Benefit</th><th>Description</th></tr></thead>
-          <tbody>
-            <tr><td>Quality Control</td><td>Humans approve all training data before AI learns</td></tr>
-            <tr><td>No GPU Required</td><td>Training runs on cloud GPUs (RunPod)</td></tr>
-            <tr><td>Continuous Improvement</td><td>AI mistakes get corrected and fed back</td></tr>
-            <tr><td>Cost Effective</td><td>Pay only for GPU time (~$0.50-2/hour)</td></tr>
-            <tr><td>Specialized Knowledge</td><td>AI understands theological nuances</td></tr>
-          </tbody>
-        </table>
-      </div>
-
-      <h3>Technical Overview</h3>
+      <h3>Architecture</h3>
       <div className="docs-table">
         <table>
           <thead><tr><th>Component</th><th>Technology</th><th>Purpose</th></tr></thead>
           <tbody>
-            <tr><td>Web App</td><td>React + Vite</td><td>User interface</td></tr>
-            <tr><td>Base Models</td><td>Qwen 2.5 (7B-14B)</td><td>Starting point for training</td></tr>
-            <tr><td>Training</td><td>LoRA / QLoRA</td><td>Efficient fine-tuning</td></tr>
-            <tr><td>Cloud GPUs</td><td>RunPod Serverless</td><td>Remote training</td></tr>
-            <tr><td>Vector DB</td><td>Weaviate</td><td>RAFT distractors</td></tr>
+            <tr><td>Frontend</td><td>React + Vite</td><td>User interface (this app)</td></tr>
+            <tr><td>Training Backend</td><td>RunPod Serverless + Axolotl</td><td>GPU training on demand</td></tr>
+            <tr><td>Inference</td><td>RunPod Serverless + vLLM</td><td>Model testing and chat</td></tr>
+            <tr><td>Vector DB</td><td>Weaviate (optional)</td><td>RAFT distractor documents</td></tr>
+            <tr><td>Model Hub</td><td>HuggingFace</td><td>Store and share trained models</td></tr>
           </tbody>
         </table>
       </div>
 
-      <h3>What is LoRA?</h3>
-      <p>Instead of retraining the entire AI model, LoRA trains a small "adapter" layer (~1-5% of parameters). This means faster training, lower cost ($5-20 per run), and less memory needed.</p>
+      <h3>Supported Models</h3>
+      <ul>
+        <li><strong>Qwen 2.5</strong> - 0.5B, 1.5B, 3B, 7B, 14B (Instruct versions)</li>
+        <li><strong>Llama 3.1/3.2</strong> - 1B, 3B, 8B, 70B (Instruct versions)</li>
+        <li><strong>Mistral</strong> - 7B Instruct, Mixtral 8x7B</li>
+        <li><strong>Microsoft Phi-3</strong> - Mini, Small</li>
+        <li><strong>Google Gemma 2</strong> - 2B, 9B</li>
+      </ul>
 
-      <h3>What is RAFT?</h3>
-      <p>RAFT (Retrieval-Augmented Fine-Tuning) trains the AI to read multiple documents, identify relevant ones, extract and cite information, and explain reasoning step-by-step.</p>
+      <h3>Training Methods</h3>
+      <div className="docs-table">
+        <table>
+          <thead><tr><th>Method</th><th>VRAM</th><th>Speed</th><th>Use Case</th></tr></thead>
+          <tbody>
+            <tr><td>QLoRA (4-bit)</td><td>~16GB</td><td>Fast</td><td>Most efficient, recommended default</td></tr>
+            <tr><td>LoRA</td><td>~24GB</td><td>Fast</td><td>Slightly better quality than QLoRA</td></tr>
+            <tr><td>Full Fine-tune</td><td>~80GB+</td><td>Slow</td><td>Maximum quality, requires large GPU</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>RAFT (Retrieval-Augmented Fine-Tuning)</h3>
+      <p>RAFT trains models to answer questions using source documents. During training, the model learns to:</p>
+      <ul>
+        <li>Identify relevant documents from a set of distractors</li>
+        <li>Extract and cite information from sources</li>
+        <li>Explain reasoning with chain-of-thought</li>
+      </ul>
+
+      <h3>Security</h3>
+      <p>This application implements production-ready security:</p>
+      <ul>
+        <li><strong>No hardcoded secrets</strong> - All API keys entered at runtime</li>
+        <li><strong>Local storage only</strong> - Keys persist in your browser, not in code</li>
+        <li><strong>Model whitelist</strong> - Only trusted model sources allowed</li>
+        <li><strong>Input validation</strong> - All configs sanitized before use</li>
+        <li><strong>XSS protection</strong> - URL sanitization in markdown rendering</li>
+      </ul>
 
       <h3>Cost Estimate</h3>
       <div className="docs-table">
         <table>
-          <thead><tr><th>Item</th><th>Cost</th><th>Frequency</th></tr></thead>
+          <thead><tr><th>Resource</th><th>Cost</th><th>Notes</th></tr></thead>
           <tbody>
-            <tr><td>RunPod GPU (A6000)</td><td>~$0.79/hour</td><td>Per training session</td></tr>
-            <tr><td>Typical training run</td><td>~$5-15</td><td>Per 1000 Q&A pairs</td></tr>
-            <tr><td>Weaviate Cloud</td><td>Free tier</td><td>Monthly</td></tr>
-            <tr><td>Software</td><td>Free (open source)</td><td>One-time setup</td></tr>
+            <tr><td>RunPod L40S (48GB)</td><td>~$0.69/hour</td><td>Good for 14B models</td></tr>
+            <tr><td>RunPod A100 (80GB)</td><td>~$1.99/hour</td><td>For 70B or full fine-tune</td></tr>
+            <tr><td>Typical QLoRA run</td><td>$2-10</td><td>1-3 hours for 1000 samples</td></tr>
+            <tr><td>Weaviate Cloud</td><td>Free tier</td><td>For RAFT distractors</td></tr>
+            <tr><td>HuggingFace</td><td>Free</td><td>Model hosting</td></tr>
           </tbody>
         </table>
       </div>
+
+      <h3>Quick Start</h3>
+      <ol>
+        <li>Get a RunPod API key from <a href="https://runpod.io" target="_blank" rel="noopener noreferrer">runpod.io</a></li>
+        <li>Create a Serverless Endpoint with the <code>matvg621/magisai-training:v10</code> Docker image</li>
+        <li>Enter your API key and Endpoint ID in the Training section</li>
+        <li>Load your training data in Data Review</li>
+        <li>Review and accept Q&A pairs</li>
+        <li>Click Start Training</li>
+      </ol>
     </article>
   )
 }
@@ -4273,13 +4268,41 @@ function UserGuideDoc() {
   return (
     <article className="docs-content">
       <h2>User Guide</h2>
-      <p className="docs-lead">Complete guide to using MagisAI Training Hub for human-in-the-loop AI training.</p>
+      <p className="docs-lead">Complete guide to using MagisAI Training Hub.</p>
 
-      <h3>Tab 1: Data Review</h3>
+      <h3>Configuration</h3>
+      <p>All API keys and endpoints are entered in the UI and saved to your browser's local storage. No environment files needed.</p>
+
+      <h4>Required Configuration</h4>
+      <div className="docs-table">
+        <table>
+          <thead><tr><th>Setting</th><th>Location</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td>RunPod API Key</td><td>Training → RunPod Connection</td><td>Authentication for training jobs</td></tr>
+            <tr><td>Training Endpoint ID</td><td>Training → RunPod Connection</td><td>Your Axolotl serverless endpoint</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>Optional Configuration</h4>
+      <div className="docs-table">
+        <table>
+          <thead><tr><th>Setting</th><th>Location</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td>Weaviate URL</td><td>Training → Weaviate</td><td>For RAFT distractor documents</td></tr>
+            <tr><td>Weaviate API Key</td><td>Training → Weaviate</td><td>Weaviate authentication</td></tr>
+            <tr><td>HuggingFace Token</td><td>Training → HuggingFace Hub</td><td>Push models to HF Hub</td></tr>
+            <tr><td>Inference Endpoint ID</td><td>Test Model</td><td>Your vLLM serverless endpoint</td></tr>
+            <tr><td>Judge Endpoint/Key</td><td>Evaluate</td><td>LLM-as-judge scoring</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Data Review</h3>
       <h4>Loading Data</h4>
       <ul>
-        <li><strong>From CSV:</strong> Click "Load Data" and select your CSV file with Question/Answer columns</li>
-        <li><strong>From JSON:</strong> Click "Resume" to load a previously saved session</li>
+        <li><strong>From CSV:</strong> Click "Load Data" and select a CSV with Question/Answer columns</li>
+        <li><strong>From JSON:</strong> Click "Resume" to load a saved session</li>
       </ul>
 
       <h4>Reviewing Q&A Pairs</h4>
@@ -4287,57 +4310,59 @@ function UserGuideDoc() {
         <table>
           <thead><tr><th>Action</th><th>Button</th><th>Keyboard</th><th>What it does</th></tr></thead>
           <tbody>
-            <tr><td>Accept</td><td>Green &#10003;</td><td>A</td><td>Mark as good for training</td></tr>
-            <tr><td>Reject</td><td>Red &#10007;</td><td>R</td><td>Exclude from training</td></tr>
-            <tr><td>Edit</td><td>Blue &#9998;</td><td>E</td><td>Modify the answer text</td></tr>
-            <tr><td>Previous</td><td>&#8592;</td><td>Left Arrow</td><td>Go to previous pair</td></tr>
-            <tr><td>Next</td><td>&#8594;</td><td>Right Arrow</td><td>Go to next pair</td></tr>
+            <tr><td>Accept</td><td>Green ✓</td><td>A</td><td>Mark as good for training</td></tr>
+            <tr><td>Reject</td><td>Red ✗</td><td>R</td><td>Exclude from training</td></tr>
+            <tr><td>Edit</td><td>Blue ✎</td><td>E</td><td>Modify the answer text</td></tr>
+            <tr><td>Previous</td><td>←</td><td>Left Arrow</td><td>Go to previous pair</td></tr>
+            <tr><td>Next</td><td>→</td><td>Right Arrow</td><td>Go to next pair</td></tr>
           </tbody>
         </table>
       </div>
 
-      <h3>Tab 2: Training</h3>
+      <h3>Training</h3>
       <h4>Step 1: Connect to RunPod</h4>
-      <p>Click "Connect" in the RunPod section and wait for the green "Connected" status.</p>
+      <p>Enter your API Key and Endpoint ID, then click "Test Connection".</p>
 
-      <h4>Step 2: Prepare Training Data</h4>
+      <h4>Step 2: Choose Training Type</h4>
       <ul>
-        <li><strong>Prepare from Curated:</strong> Click "Prepare RAFT Data" to format accepted Q&A pairs</li>
-        <li><strong>Load Existing:</strong> Select a previously prepared .jsonl file</li>
+        <li><strong>SFT:</strong> Standard supervised fine-tuning</li>
+        <li><strong>RAFT:</strong> Retrieval-augmented with distractor documents</li>
       </ul>
 
-      <h4>Step 3: Configure Training</h4>
+      <h4>Step 3: Configure Hyperparameters</h4>
       <div className="docs-table">
         <table>
           <thead><tr><th>Parameter</th><th>Default</th><th>Description</th></tr></thead>
           <tbody>
-            <tr><td>Training Type</td><td>SFT</td><td>SFT, RAFT, or DPO</td></tr>
-            <tr><td>Learning Rate</td><td>2e-5</td><td>How fast the model learns</td></tr>
+            <tr><td>Base Model</td><td>Qwen 2.5 14B</td><td>Model to fine-tune</td></tr>
+            <tr><td>Method</td><td>QLoRA</td><td>QLoRA, LoRA, or Full</td></tr>
+            <tr><td>Learning Rate</td><td>2e-4</td><td>Training speed</td></tr>
             <tr><td>Epochs</td><td>3</td><td>Passes through data</td></tr>
             <tr><td>Batch Size</td><td>4</td><td>Samples per step</td></tr>
-            <tr><td>LoRA Rank</td><td>16</td><td>Adapter capacity</td></tr>
-            <tr><td>LoRA Alpha</td><td>32</td><td>Scaling factor</td></tr>
-            <tr><td>Max Seq Length</td><td>2048</td><td>Max token length</td></tr>
+            <tr><td>LoRA Rank</td><td>32</td><td>Adapter capacity</td></tr>
+            <tr><td>LoRA Alpha</td><td>64</td><td>Scaling factor</td></tr>
           </tbody>
         </table>
       </div>
 
       <h4>Step 4: Start Training</h4>
-      <p>Click "Start Training", confirm the dialog, and monitor progress via the spinner and console output.</p>
+      <p>Click "Start Training" and monitor progress in the console output.</p>
 
-      <h3>Tab 3: Metrics & Evaluation</h3>
-      <h4>Score Colors</h4>
-      <div className="docs-table">
-        <table>
-          <thead><tr><th>Color</th><th>Score</th><th>Meaning</th></tr></thead>
-          <tbody>
-            <tr><td><span className="docs-score docs-score-red">Red</span></td><td>&lt; 0.4</td><td>Poor quality</td></tr>
-            <tr><td><span className="docs-score docs-score-orange">Orange</span></td><td>0.4 - 0.6</td><td>Needs improvement</td></tr>
-            <tr><td><span className="docs-score docs-score-yellow">Yellow</span></td><td>0.6 - 0.8</td><td>Acceptable</td></tr>
-            <tr><td><span className="docs-score docs-score-green">Green</span></td><td>&gt; 0.8</td><td>Good quality</td></tr>
-          </tbody>
-        </table>
-      </div>
+      <h3>Test Model</h3>
+      <p>Chat with your fine-tuned model:</p>
+      <ol>
+        <li>Enter your vLLM Inference Endpoint ID</li>
+        <li>Enter your model's HuggingFace path (e.g., "username/model-name")</li>
+        <li>Click "Connect" and start chatting</li>
+      </ol>
+
+      <h3>Evaluate</h3>
+      <p>Score model responses using LLM-as-judge:</p>
+      <ol>
+        <li>Load model responses (JSON file with question/response pairs)</li>
+        <li>Configure a judge endpoint (any OpenAI-compatible API)</li>
+        <li>Run evaluation to get quality scores</li>
+      </ol>
 
       <h3>Keyboard Shortcuts</h3>
       <div className="docs-table">
@@ -4347,8 +4372,7 @@ function UserGuideDoc() {
             <tr><td><kbd>A</kbd></td><td>Accept current Q&A</td><td>Data Review</td></tr>
             <tr><td><kbd>R</kbd></td><td>Reject current Q&A</td><td>Data Review</td></tr>
             <tr><td><kbd>E</kbd></td><td>Edit current answer</td><td>Data Review</td></tr>
-            <tr><td><kbd>&#8592;</kbd></td><td>Previous Q&A</td><td>Data Review</td></tr>
-            <tr><td><kbd>&#8594;</kbd></td><td>Next Q&A</td><td>Data Review</td></tr>
+            <tr><td><kbd>←</kbd> <kbd>→</kbd></td><td>Navigate Q&A pairs</td><td>Data Review</td></tr>
             <tr><td><kbd>Ctrl+S</kbd></td><td>Save session</td><td>Data Review</td></tr>
           </tbody>
         </table>
@@ -4357,28 +4381,32 @@ function UserGuideDoc() {
       <h3>Troubleshooting</h3>
       <div className="docs-troubleshoot">
         <div className="docs-trouble-item">
-          <strong>"RunPod API key not configured"</strong>
-          <p>Add <code>RUNPOD_API_KEY=your_key</code> to your .env file</p>
+          <strong>"Please configure API Key first"</strong>
+          <p>Enter your RunPod API Key in Training → RunPod Connection</p>
         </div>
         <div className="docs-trouble-item">
-          <strong>"No endpoints found"</strong>
-          <p>Create a serverless endpoint in RunPod dashboard first</p>
+          <strong>Connection test fails</strong>
+          <p>Verify your API key and Endpoint ID are correct. Check RunPod dashboard for endpoint status.</p>
         </div>
         <div className="docs-trouble-item">
           <strong>"Job stuck in IN_QUEUE"</strong>
-          <p>Check if your RunPod endpoint has available workers (cold start may be needed)</p>
+          <p>Workers may need to cold start. Wait 1-2 minutes or check if workers are available.</p>
         </div>
         <div className="docs-trouble-item">
           <strong>Training fails immediately</strong>
-          <p>Check console output and verify endpoint uses correct Docker image</p>
+          <p>Check console output. Verify endpoint uses Docker image: <code>matvg621/magisai-training:v10</code></p>
         </div>
         <div className="docs-trouble-item">
           <strong>Out of memory</strong>
-          <p>Reduce batch size, sequence length, or use a smaller model</p>
+          <p>Reduce batch size or sequence length. Use QLoRA for lower VRAM usage.</p>
+        </div>
+        <div className="docs-trouble-item">
+          <strong>"Model not in allowed list"</strong>
+          <p>Only models from trusted sources (Qwen, Meta, Mistral, Microsoft, Google) are allowed.</p>
         </div>
         <div className="docs-trouble-item">
           <strong>"No space left on device"</strong>
-          <p>Create a 100GB Network Volume in RunPod and attach to your endpoint</p>
+          <p>Attach a 100GB+ Network Volume to your RunPod endpoint.</p>
         </div>
       </div>
     </article>
@@ -4391,60 +4419,62 @@ function VersionHistoryDoc() {
       <h2>Version History</h2>
       <p className="docs-lead">Docker image versions and change log for the RunPod serverless handler.</p>
 
-      <h3>Docker Image Versions</h3>
+      <h3>Docker Image</h3>
+      <p>Current image: <code>matvg621/magisai-training:v10</code></p>
+
+      <h3>Version History</h3>
       <div className="docs-table">
         <table>
-          <thead><tr><th>Version</th><th>Date</th><th>Status</th><th>Key Change</th></tr></thead>
+          <thead><tr><th>Version</th><th>Date</th><th>Status</th><th>Key Changes</th></tr></thead>
           <tbody>
-            <tr><td>v7</td><td>2026-01-18</td><td><span className="docs-badge docs-badge-current">Current</span></td><td>DataCollator, data validation, truncation</td></tr>
-            <tr><td>v6</td><td>2026-01-18</td><td><span className="docs-badge docs-badge-deprecated">Deprecated</span></td><td>padding_side fix, EOS token, debug logging</td></tr>
-            <tr><td>v5</td><td>2026-01-18</td><td><span className="docs-badge docs-badge-deprecated">Deprecated</span></td><td>Message-to-text conversion, all-linear targets</td></tr>
-            <tr><td>v4</td><td>2026-01-18</td><td><span className="docs-badge docs-badge-deprecated">Deprecated</span></td><td>Pinned requirements, memory optimizations</td></tr>
-            <tr><td>v3</td><td>2026-01-17</td><td><span className="docs-badge docs-badge-deprecated">Deprecated</span></td><td>Removed autoawq</td></tr>
-            <tr><td>v2</td><td>2026-01-17</td><td><span className="docs-badge docs-badge-deprecated">Deprecated</span></td><td>SFTConfig parameter fix</td></tr>
-            <tr><td>v1</td><td>2026-01-16</td><td><span className="docs-badge docs-badge-deprecated">Deprecated</span></td><td>Initial release</td></tr>
+            <tr><td>v10</td><td>2026-01-30</td><td><span className="docs-badge docs-badge-current">Current</span></td><td>Security hardening, model whitelist, input validation</td></tr>
+            <tr><td>v9</td><td>2026-01-22</td><td><span className="docs-badge docs-badge-deprecated">Deprecated</span></td><td>Added inference support, vLLM integration</td></tr>
+            <tr><td>v8</td><td>2026-01-20</td><td><span className="docs-badge docs-badge-deprecated">Deprecated</span></td><td>Axolotl with PyTorch 2.5, Blackwell support</td></tr>
+            <tr><td>v7</td><td>2026-01-18</td><td><span className="docs-badge docs-badge-deprecated">Deprecated</span></td><td>DataCollator, data validation</td></tr>
+            <tr><td>v1-v6</td><td>2026-01</td><td><span className="docs-badge docs-badge-deprecated">Deprecated</span></td><td>Initial development versions</td></tr>
           </tbody>
         </table>
       </div>
 
-      <h3>v7 (Current)</h3>
-      <p><strong>Fixes tokenization/batching errors</strong></p>
+      <h3>v10 (Current)</h3>
+      <p><strong>Security Hardening Release</strong></p>
       <ul>
-        <li>Added DataCollatorForLanguageModeling for proper batch padding</li>
-        <li>Added truncation_side = "left" to keep assistant responses</li>
-        <li>Data validation loop ensures all text fields are strings</li>
-        <li>Handles nested lists by flattening, filters empty samples</li>
+        <li>Model whitelist - only trusted model sources allowed (Qwen, Meta, Mistral, etc.)</li>
+        <li>Input validation - all config values sanitized before use</li>
+        <li>Disabled trust_remote_code - prevents arbitrary code execution</li>
+        <li>Error handling - no tracebacks exposed to clients</li>
+        <li>Pinned dependency versions for reproducibility</li>
+        <li>Added Docker healthcheck</li>
       </ul>
 
-      <h3>v6</h3>
-      <p><strong>Fixes training loss=0 issue</strong></p>
+      <h3>v9</h3>
+      <p><strong>Inference Support</strong></p>
       <ul>
-        <li>padding_side = "right" (required for causal LM)</li>
-        <li>EOS token at end of each training sample</li>
-        <li>Changed warmup_ratio → warmup_steps=10</li>
-        <li>Debug logging (sample preview, token count)</li>
+        <li>Added inference action for testing trained models</li>
+        <li>LoRA adapter loading from HuggingFace Hub</li>
+        <li>Model caching for faster repeated inference</li>
+        <li>Chat template support (ChatML)</li>
       </ul>
 
-      <h3>v5</h3>
-      <p><strong>Message format conversion</strong></p>
+      <h3>v8</h3>
+      <p><strong>Axolotl + PyTorch 2.5</strong></p>
       <ul>
-        <li>Automatic conversion from chat messages to text</li>
-        <li>target_modules="all-linear"</li>
-        <li>Gradient checkpointing, eager attention</li>
+        <li>Updated to PyTorch 2.5.1 with CUDA 12.4</li>
+        <li>Blackwell GPU support (sm_120)</li>
+        <li>Improved 80GB+ GPU optimizations</li>
+        <li>Flash attention enabled by default</li>
       </ul>
 
-      <h3>Bug Fix History</h3>
+      <h3>Common Issues</h3>
       <div className="docs-table">
         <table>
-          <thead><tr><th>Issue</th><th>Error</th><th>Solution</th></tr></thead>
+          <thead><tr><th>Issue</th><th>Solution</th></tr></thead>
           <tbody>
-            <tr><td>GraphQL query</td><td>400 Bad Request</td><td>Removed serverlessDiscount field</td></tr>
-            <tr><td>API URL</td><td>404 Not Found</td><td>api.runpod.io → api.runpod.ai</td></tr>
-            <tr><td>AWQ model</td><td>Loading requires auto-awq</td><td>Use non-AWQ models</td></tr>
-            <tr><td>Disk space</td><td>No space left</td><td>100GB Network Volume</td></tr>
-            <tr><td>Dataset</td><td>KeyError: 'text'</td><td>Message-to-text conversion</td></tr>
-            <tr><td>Training</td><td>loss: 0.0</td><td>padding_side, EOS fixes</td></tr>
-            <tr><td>Batching</td><td>Excessive nesting</td><td>DataCollator, validation</td></tr>
+            <tr><td>Model not in allowed list</td><td>Only Qwen, Llama, Mistral, Phi, Gemma models allowed</td></tr>
+            <tr><td>Out of memory</td><td>Reduce batch size, use QLoRA, or get larger GPU</td></tr>
+            <tr><td>No space left on device</td><td>Attach 100GB+ Network Volume</td></tr>
+            <tr><td>Job stuck in queue</td><td>Workers need cold start - wait 1-2 min</td></tr>
+            <tr><td>Connection timeout</td><td>Check API key and endpoint ID are correct</td></tr>
           </tbody>
         </table>
       </div>
