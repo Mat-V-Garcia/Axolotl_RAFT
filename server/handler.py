@@ -17,8 +17,112 @@ import json
 import yaml
 import subprocess
 import torch
+import uuid
 from datetime import datetime
 from pathlib import Path
+
+# =============================================================================
+# SECURITY: Model Whitelist
+# =============================================================================
+# Only models from trusted organizations are allowed to prevent malicious model injection.
+# Add models/orgs as needed for your use case.
+
+ALLOWED_MODELS = [
+    "Qwen/Qwen2.5-14B-Instruct",
+    "Qwen/Qwen2.5-7B-Instruct",
+    "Qwen/Qwen2.5-3B-Instruct",
+    "Qwen/Qwen2.5-1.5B-Instruct",
+    "Qwen/Qwen2.5-0.5B-Instruct",
+    "meta-llama/Llama-3.1-8B-Instruct",
+    "meta-llama/Llama-3.1-70B-Instruct",
+    "meta-llama/Llama-3.2-3B-Instruct",
+    "meta-llama/Llama-3.2-1B-Instruct",
+    "mistralai/Mistral-7B-Instruct-v0.3",
+    "mistralai/Mixtral-8x7B-Instruct-v0.1",
+    "microsoft/Phi-3-mini-4k-instruct",
+    "microsoft/Phi-3-small-8k-instruct",
+    "google/gemma-2-9b-it",
+    "google/gemma-2-2b-it",
+]
+
+ALLOWED_ORGS = ["Qwen", "meta-llama", "mistralai", "microsoft", "google", "deepseek-ai"]
+
+# Allowed config keys to prevent injection
+ALLOWED_CONFIG_KEYS = {
+    "method", "num_epochs", "learning_rate", "batch_size",
+    "lora_r", "lora_alpha", "sequence_len", "max_seq_length",
+    "hub_model_id", "hub_token", "use_raft", "gradient_accumulation_steps"
+}
+
+
+def validate_model_id(model_id: str) -> tuple[bool, str]:
+    """Validate that a model ID is from a trusted source.
+
+    Returns (is_valid, error_message).
+    """
+    if not model_id or not isinstance(model_id, str):
+        return False, "Invalid model ID format"
+
+    # Check exact match first
+    if model_id in ALLOWED_MODELS:
+        return True, ""
+
+    # Check organization prefix
+    if "/" in model_id:
+        org = model_id.split("/")[0]
+        if org in ALLOWED_ORGS:
+            return True, ""
+
+    return False, f"Model '{model_id}' is not in the allowed list. Contact admin to add it."
+
+
+def sanitize_config(config: dict) -> dict:
+    """Sanitize configuration values to prevent injection attacks.
+
+    - Only allows known config keys
+    - Removes potential YAML injection characters from strings
+    - Validates numeric ranges
+    """
+    if not isinstance(config, dict):
+        return {}
+
+    sanitized = {}
+    for key, value in config.items():
+        # Only allow known keys
+        if key not in ALLOWED_CONFIG_KEYS:
+            print(f"[SECURITY] Ignoring unknown config key: {key}")
+            continue
+
+        # Sanitize string values
+        if isinstance(value, str):
+            # Remove YAML special characters that could cause injection
+            value = value.replace("\n", "").replace("\r", "")
+            value = value.replace("!", "").replace("&", "").replace("*", "")
+            # Limit length
+            value = value[:500]
+
+        # Validate numeric ranges
+        if key == "num_epochs" and isinstance(value, (int, float)):
+            value = max(1, min(100, int(value)))
+        elif key == "batch_size" and isinstance(value, (int, float)):
+            value = max(1, min(64, int(value)))
+        elif key == "lora_r" and isinstance(value, (int, float)):
+            value = max(4, min(256, int(value)))
+        elif key == "lora_alpha" and isinstance(value, (int, float)):
+            value = max(8, min(512, int(value)))
+
+        sanitized[key] = value
+
+    return sanitized
+
+
+def log_error(error: Exception, context: str = "") -> str:
+    """Log error details server-side and return a reference ID for the client."""
+    import traceback
+    error_id = str(uuid.uuid4())[:8]
+    print(f"[ERROR {error_id}] {context}")
+    print(f"[ERROR {error_id}] {traceback.format_exc()}")
+    return error_id
 
 # Global model cache for inference (persists across requests on same worker)
 _model_cache = {
@@ -38,7 +142,7 @@ def generate_axolotl_config(base_model: str, data_path: str, output_dir: str, co
         "base_model": base_model,
         "model_type": "AutoModelForCausalLM",
         "tokenizer_type": "AutoTokenizer",
-        "trust_remote_code": True,
+        "trust_remote_code": False,  # SECURITY: Disabled to prevent arbitrary code execution
 
         "datasets": [{
             "path": data_path,
@@ -226,11 +330,12 @@ def load_model_for_inference(model_id: str, base_model: str = None):
         print(f"Loading as full model: {model_id}")
 
     # Load base model
+    # SECURITY: trust_remote_code=False prevents arbitrary code execution from model repos
     model = AutoModelForCausalLM.from_pretrained(
         base_model,
         device_map="auto",
         torch_dtype=torch.bfloat16,
-        trust_remote_code=True
+        trust_remote_code=False
     )
 
     # Load adapter if applicable
@@ -303,6 +408,12 @@ def handle_inference(job_input: dict):
     config = job_input.get("config", {})
     base_model = job_input.get("base_model")  # Optional override
 
+    # SECURITY: Validate base_model if provided
+    if base_model:
+        is_valid, error_msg = validate_model_id(base_model)
+        if not is_valid:
+            return {"status": "error", "error": error_msg}
+
     print(f"Inference request:")
     print(f"  Model: {model_id}")
     print(f"  Messages: {len(messages)}")
@@ -319,11 +430,11 @@ def handle_inference(job_input: dict):
         }
 
     except Exception as e:
-        import traceback
+        # SECURITY: Log full error server-side, return only reference ID to client
+        error_id = log_error(e, f"Inference failed for model {model_id}")
         return {
             "status": "error",
-            "error": str(e),
-            "traceback": traceback.format_exc()
+            "error": f"Inference failed (ref: {error_id}). Check server logs for details."
         }
 
 
@@ -332,7 +443,15 @@ def handle_training(job, job_input: dict):
 
     base_model = job_input.get("base_model", "Qwen/Qwen2.5-14B-Instruct")
     training_data = job_input.get("training_data", [])
-    config = job_input.get("config", {})
+    raw_config = job_input.get("config", {})
+
+    # SECURITY: Validate base model
+    is_valid, error_msg = validate_model_id(base_model)
+    if not is_valid:
+        return {"status": "error", "error": error_msg}
+
+    # SECURITY: Sanitize configuration
+    config = sanitize_config(raw_config)
 
     if not training_data:
         return {"status": "error", "error": "No training data provided"}
@@ -405,11 +524,11 @@ def handle_training(job, job_input: dict):
         }
 
     except Exception as e:
-        import traceback
+        # SECURITY: Log full error server-side, return only reference ID to client
+        error_id = log_error(e, f"Training failed for model {base_model}")
         return {
             "status": "error",
-            "error": str(e),
-            "traceback": traceback.format_exc()
+            "error": f"Training failed (ref: {error_id}). Check server logs for details."
         }
 
 
